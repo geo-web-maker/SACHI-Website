@@ -1,0 +1,65 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--a-text-dim);
+  max-width: 480px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.tile {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 12px;
+}
+
+.thumb {
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  background: repeating-linear-gradient(135deg, #0e3b430d 0 2px, transparent 2px 16px), #DCE6D4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--a-text-dim);
+  font-family: var(--a-font-mono);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.captionInput {
+  width: 100%;
+  border: 1px solid var(--a-border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-family: var(--a-font);
+  font-size: 12.5px;
+  margin-bottom: 8px;
+}
+
+.removeBtn {
+  width: 100%;
+  border: 1px solid var(--a-border);
+  background: #fff;
+  color: var(--a-accent);
+  border-radius: 7px;
+  padding: 7px;
+  font-family: var(--a-font);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.removeBtn:hover {
+  background: #FBEFE3;
+}

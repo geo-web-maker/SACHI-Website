@@ -1,0 +1,33 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--a-text-dim);
+  max-width: 520px;
+}
+
+.nameCell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.roleSelect {
+  border: 1px solid var(--a-border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: var(--a-font);
+  font-size: 13px;
+  background: #fff;
+}
+
+.sectionsCell {
+  font-family: var(--a-font-mono);
+  font-size: 12.5px;
+  color: var(--a-text-dim);
+}

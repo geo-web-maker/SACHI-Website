@@ -1,0 +1,51 @@
+.wrapper {
+  background: var(--cream);
+  padding: 0 var(--gutter);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #0e3b4322;
+  border-bottom: 1px solid #0e3b4322;
+}
+
+.stat {
+  padding: 22px 14px;
+  text-align: center;
+  border-right: 1px solid #0e3b4322;
+}
+
+.stat:last-child {
+  border-right: none;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 20px;
+}
+
+.lbl {
+  font-size: 12px;
+  color: #0e3b4399;
+  margin-top: 4px;
+}
+
+@media (max-width: 860px) {
+  .row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat {
+    padding: 18px 10px;
+  }
+
+  .stat:nth-child(2n) {
+    border-right: none;
+  }
+
+  .stat:nth-child(n+3) {
+    border-top: 1px solid #0e3b4322;
+  }
+}

@@ -1,0 +1,116 @@
+.headText {
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 560px;
+  color: #FAFAF7cc;
+}
+
+.section {
+  padding: 80px var(--gutter);
+}
+
+.sectionTight {
+  padding: 80px var(--gutter);
+  padding-top: 0;
+}
+
+.historyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+}
+
+.eyebrowLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.h2 {
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+
+.p {
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: #0e3b43cc;
+  margin-bottom: 18px;
+}
+
+.historyPhoto {
+  border-radius: 20px;
+  aspect-ratio: 4 / 3;
+  background:
+    repeating-linear-gradient(135deg, #0e3b430d 0 2px, transparent 2px 16px),
+    var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0e3b4399;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pillarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.pillarCard {
+  background: var(--sage-l);
+  border-radius: 20px;
+  padding: 30px;
+}
+
+.pillarCard h3 {
+  font-size: 19px;
+  margin-bottom: 10px;
+}
+
+.pillarCard p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #0e3b43aa;
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 0;
+}
+
+.whyGrid h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.whyGrid p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #0e3b43aa;
+}
+
+.numBadge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--deep);
+  color: var(--sage-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  margin-bottom: 14px;
+}
+
+@media (max-width: 860px) {
+  .historyGrid, .pillarGrid, .whyGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,27 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.welcome {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 26px;
+  max-width: 640px;
+}
+
+.welcome h2 {
+  font-family: var(--a-font);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.welcome p {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--a-text-dim);
+}

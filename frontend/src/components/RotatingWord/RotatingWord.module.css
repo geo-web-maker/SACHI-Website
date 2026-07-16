@@ -1,0 +1,21 @@
+.wordWrap {
+  display: inline-block;
+  position: relative;
+  color: var(--sage);
+}
+
+.word {
+  display: inline-block;
+  animation: rotateIn 0.45s ease;
+}
+
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

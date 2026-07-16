@@ -1,0 +1,82 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slide {
+  position: relative;
+  border-radius: 20px;
+  background:
+    repeating-linear-gradient(135deg, #0e3b430d 0 2px, transparent 2px 16px),
+    var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.placeholder {
+  color: #0e3b4399;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.captionBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(0deg, #0e3b43aa, transparent);
+  color: var(--cream);
+  font-size: 12.5px;
+  padding: 22px 16px 12px;
+}
+
+.thumbRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.thumb {
+  flex: 1;
+  min-width: 90px;
+  border: 1px solid #0e3b4322;
+  background: var(--sage-l);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #0e3b4399;
+  cursor: pointer;
+  text-align: left;
+}
+
+.thumbActive {
+  border-color: var(--terra);
+  color: var(--terra);
+  background: #fff;
+}
+
+/* On desktop, the thumbnail variant sits beside the photo instead of below it.
+   Mobile keeps the original stacked layout (photo on top, thumbs in a row below). */
+@media (min-width: 700px) {
+  .wrapperSide {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 16px;
+  }
+
+  .wrapperSide .thumbRow {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .wrapperSide .thumb {
+    min-width: unset;
+  }
+}
