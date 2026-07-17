@@ -32,7 +32,7 @@
   margin-top: 4px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .row {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -44,6 +44,11 @@
   .stat:nth-child(2n) {
     border-right: none;
   }
+
+  .stat:nth-child(n+3) {
+    border-top: 1px solid #0e3b4322;
+  }
+}
 
   .stat:nth-child(n+3) {
     border-top: 1px solid #0e3b4322;
