@@ -257,7 +257,7 @@
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 599px) {
   .floatingCard {
     bottom: -16px;
     left: 12px;
