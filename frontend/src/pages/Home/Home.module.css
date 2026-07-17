@@ -1,0 +1,262 @@
+.heroMediaWrap {
+  position: relative;
+}
+
+.floatingCard {
+  position: absolute;
+  bottom: -22px;
+  left: -22px;
+  z-index: 5;
+  background: var(--cream);
+  color: var(--deep);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 12px 28px #0e3b4340;
+}
+
+.floatingNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--terra);
+}
+
+.floatingLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: #0e3b43aa;
+}
+
+.lede {
+  font-size: 16.5px;
+  line-height: 1.65;
+  max-width: 420px;
+  color: #FAFAF7cc;
+  margin-bottom: 32px;
+}
+
+.heroActions {
+  display: flex;
+  gap: 14px;
+}
+
+.btnPrimary {
+  background: var(--sage);
+  color: var(--deep);
+  text-decoration: none;
+  padding: 14px 24px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.btnGhost {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 14.5px;
+  padding: 14px 8px;
+  border-bottom: 1px solid #ffffff55;
+}
+
+.btnGhostDark {
+  color: var(--deep);
+  text-decoration: none;
+  font-size: 14.5px;
+  border-bottom: 1px solid #0e3b4355;
+  display: inline-block;
+  margin-top: 28px;
+}
+
+.section {
+  padding: 80px var(--gutter);
+}
+
+.inner {
+  max-width: var(--max-width);
+}
+
+.eyebrowLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.h2 {
+  font-size: 32px;
+  margin-bottom: 44px;
+  max-width: 600px;
+}
+
+.programmeText {
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: #0e3b43cc;
+  max-width: 600px;
+  margin-bottom: 36px;
+}
+
+.programmeGrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 18px;
+}
+
+.programmePhoto {
+  border-radius: 20px;
+  min-height: 280px;
+  background:
+    repeating-linear-gradient(135deg, #0e3b430d 0 2px, transparent 2px 16px),
+    var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0e3b4399;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+  padding: 12px;
+}
+
+.programmeCard {
+  background: var(--sage-l);
+  border-radius: 20px;
+  padding: 26px;
+}
+
+.cardIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--deep);
+  color: var(--sage-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.programmeCard h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.programmeCard p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #0e3b43aa;
+}
+
+@media (max-width: 860px) {
+  .programmeGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillarList {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  margin-bottom: 40px;
+}
+
+.pillarRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.pillarRowFlip {
+  direction: rtl;
+}
+
+.pillarRowFlip > * {
+  direction: ltr;
+}
+
+.pillarText h3 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.pillarText p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #0e3b43cc;
+}
+
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.iconCard {
+  background: var(--sage-l);
+  border-radius: 20px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.iconCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px #0e3b431a;
+}
+
+.iconBadge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--deep);
+  color: var(--sage-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.iconCard h3 {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.iconCard p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #0e3b43aa;
+}
+
+@media (max-width: 860px) {
+  .pillarRow {
+    grid-template-columns: 1fr;
+    direction: ltr;
+  }
+
+  .iconGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .floatingCard {
+    bottom: -16px;
+    left: 12px;
+    padding: 13px 16px;
+  }
+
+  .floatingNum {
+    font-size: 24px;
+  }
+}

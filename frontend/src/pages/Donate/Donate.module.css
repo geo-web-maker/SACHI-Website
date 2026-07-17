@@ -1,0 +1,169 @@
+.headText {
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 560px;
+  color: #FAFAF7cc;
+}
+
+.section {
+  padding: 80px var(--gutter);
+}
+
+.sectionTight {
+  padding: 80px var(--gutter);
+  padding-top: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: .55fr .45fr;
+  gap: 56px;
+}
+
+.eyebrowLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.h2 {
+  font-size: 26px;
+  margin-bottom: 24px;
+}
+
+.h3 {
+  font-size: 20px;
+  margin-bottom: 18px;
+}
+
+.toggleRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 100px;
+  border: 1px solid var(--deep);
+  background: transparent;
+  color: var(--deep);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggleActive {
+  background: var(--deep);
+  color: var(--cream);
+}
+
+.amountGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.amountBtn {
+  padding: 16px 8px;
+  border-radius: 10px;
+  border: 1px solid #0e3b4333;
+  background: #fff;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--deep);
+  cursor: pointer;
+}
+
+.amountActive {
+  background: var(--sage-l);
+  border-color: var(--deep);
+}
+
+.customInput {
+  width: 100%;
+  border: 1px solid #0e3b4333;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #fff;
+  color: var(--deep);
+  margin-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.continueBtn {
+  background: var(--deep);
+  color: var(--cream);
+  width: 100%;
+  text-align: center;
+  border: none;
+  border-radius: 100px;
+  padding: 14px 24px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+.note {
+  font-size: 12px;
+  color: #0e3b4399;
+  margin-top: 12px;
+}
+
+.focusList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.focusItem {
+  background: var(--sage-l);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 14px;
+}
+
+.smallNote {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #0e3b43aa;
+  margin-top: 16px;
+}
+
+.waysGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.wayCard {
+  border: 1px solid #0e3b4322;
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.wayCard h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.wayCard p {
+  font-size: 13px;
+  color: #0e3b43aa;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .grid, .waysGrid {
+    grid-template-columns: 1fr;
+  }
+}

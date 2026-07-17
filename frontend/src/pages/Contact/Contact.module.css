@@ -1,0 +1,87 @@
+.headText {
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 560px;
+  color: #FAFAF7cc;
+}
+
+.section {
+  padding: 80px var(--gutter);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 56px;
+}
+
+.eyebrowLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.detail {
+  margin-bottom: 26px;
+}
+
+.detail h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.detail p {
+  font-size: 14.5px;
+  color: #0e3b43cc;
+  line-height: 1.6;
+}
+
+.formCard {
+  background: var(--sage-l);
+  border-radius: 20px;
+  padding: 36px;
+}
+
+.formCard h3 {
+  font-size: 19px;
+  margin-bottom: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form input,
+.form textarea {
+  border: 1px solid #0e3b4333;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: var(--deep);
+}
+
+.submit {
+  background: var(--deep);
+  color: var(--cream);
+  text-align: center;
+  border: none;
+  border-radius: 100px;
+  padding: 14px 24px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
