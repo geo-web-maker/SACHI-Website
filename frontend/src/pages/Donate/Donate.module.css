@@ -162,8 +162,18 @@
   line-height: 1.6;
 }
 
-@media (max-width: 860px) {
-  .grid, .waysGrid {
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .waysGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .waysGrid {
     grid-template-columns: 1fr;
   }
 }
