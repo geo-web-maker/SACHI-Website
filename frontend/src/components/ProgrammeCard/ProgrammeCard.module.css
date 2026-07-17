@@ -82,7 +82,7 @@
   transform: translateX(4px);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .row, .flip {
     grid-template-columns: 1fr;
     direction: ltr;
