@@ -238,14 +238,22 @@
   color: #0e3b43aa;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .pillarRow {
     grid-template-columns: 1fr;
     direction: ltr;
   }
 
-  .iconGrid {
-    grid-template-columns: 1fr 1fr;
+  .iconGrid,
+  .programmeGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .iconGrid,
+  .programmeGrid {
+    grid-template-columns: 1fr;
   }
 }
 
