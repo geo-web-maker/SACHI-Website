@@ -109,8 +109,20 @@
   margin-bottom: 14px;
 }
 
-@media (max-width: 860px) {
-  .historyGrid, .pillarGrid, .whyGrid {
+@media (max-width: 1023px) {
+  .historyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pillarGrid,
+  .whyGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .pillarGrid,
+  .whyGrid {
     grid-template-columns: 1fr;
   }
 }
