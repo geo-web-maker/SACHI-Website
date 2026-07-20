@@ -108,6 +108,7 @@ export default function ProgrammesAdmin() {
     setSaving(true);
     try {
       const updated = await api.patch(`/api/admin/programmes/${editing.slug}`, {
+        icon: editing.icon,
         teaser: editing.teaserDraft,
         body,
         images: editing.imagesDraft,
@@ -173,6 +174,7 @@ export default function ProgrammesAdmin() {
   }
 
   const SelectedIcon = PROGRAMME_ICONS[createDraft.icon];
+  const EditingIcon = editing ? PROGRAMME_ICONS[editing.icon] : null;
 
   return (
     <ProtectedSection section="programmes" title="Programmes">
@@ -295,6 +297,25 @@ export default function ProgrammesAdmin() {
             </>
           }
         >
+          <div>
+            <label htmlFor="edit-icon">Icon</label>
+            <div className={styles.iconPickerRow}>
+              <select
+                id="edit-icon"
+                value={editing.icon}
+                onChange={(e) => setEditing({ ...editing, icon: e.target.value })}
+              >
+                <option value="">Select an icon…</option>
+                {PROGRAMME_ICON_NAMES.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <span className={styles.iconPreview}>
+                {EditingIcon ? <EditingIcon size={22} strokeWidth={1.75} /> : '—'}
+              </span>
+            </div>
+          </div>
+
           <div>
             <label htmlFor="teaser">Teaser (shown on the Programmes overview)</label>
             <textarea
