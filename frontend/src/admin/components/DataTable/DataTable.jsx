@@ -4,7 +4,7 @@ export default function DataTable({ columns, rows, renderRow, emptyLabel = 'No r
   return (
   <div className={styles.tableWrap}>
      <div className={styles.tableScroll}>
-+      <table>
+      <table>
         <thead>
           <tr>
             {columns.map((col) => (
