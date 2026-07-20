@@ -41,7 +41,11 @@ export default function Slideshow({
       onMouseLeave={() => setPaused(false)}
     >
       <div className={styles.slide} style={{ aspectRatio: aspect }}>
-        <span className={styles.placeholder}>[ {current.caption} ]</span>
+        {current.image_url ? (
+          <img className={styles.slideImg} src={current.image_url} alt={current.caption} />
+        ) : (
+          <span className={styles.placeholder}>[ {current.caption} ]</span>
+        )}
         <div className={styles.captionBar}>{current.caption}</div>
       </div>
 
