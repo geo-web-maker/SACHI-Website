@@ -156,6 +156,8 @@ export default function ProgrammesAdmin() {
           </div>
 
           <div>
+            <label>Photos (used in both the header and gallery slideshow)</label>
+            <div className={styles.imageList}>
               {editing.imagesDraft.map((img, i) => (
                 <div className={styles.imageRow} key={img.id}>
                   <div className={styles.imageThumb}>
