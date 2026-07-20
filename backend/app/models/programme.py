@@ -33,8 +33,9 @@ class ProgrammeCreate(BaseModel):
 
 
 class ProgrammeUpdate(BaseModel):
-    """Matches the fields ProgrammesAdmin.jsx actually edits: teaser, body, images."""
+    """Matches the fields ProgrammesAdmin.jsx actually edits: icon, teaser, body, images."""
 
+    icon: str | None = None
     teaser: str | None = None
     body: list[str] | None = None
     images: list[ProgrammeImage] | None = None
