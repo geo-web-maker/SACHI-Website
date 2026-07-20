@@ -25,11 +25,11 @@ class ProgrammeOut(BaseModel):
 class ProgrammeCreate(BaseModel):
     slug: str
     icon: str
-    num: str
     title: str
     teaser: str
     body: list[str]
     images: list[ProgrammeImage] = []
+    # num intentionally omitted — assigned server-side in the router
 
 
 class ProgrammeUpdate(BaseModel):
