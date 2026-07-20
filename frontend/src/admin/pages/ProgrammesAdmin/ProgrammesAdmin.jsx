@@ -4,7 +4,16 @@ import ProtectedSection from '../../components/ProtectedSection/ProtectedSection
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
 import { api } from '../../../lib/api';
+import { PROGRAMME_ICONS, PROGRAMME_ICON_NAMES } from '../../../data/programmeIcons';
 import styles from './ProgrammesAdmin.module.css';
+
+const emptyDraft = {
+  slug: '',
+  icon: '',
+  title: '',
+  teaser: '',
+  body: '',
+};
 
 function toDraft(p) {
   return {
@@ -15,27 +24,24 @@ function toDraft(p) {
   };
 }
 
+function slugify(title) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 export default function ProgrammesAdmin() {
   const [programmes, setProgrammes] = useState([]);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImgId, setUploadingImgId] = useState(null);
 
-  async function handleImageUpload(id, e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingImgId(id);
-    try {
-      const image_url = await uploadToCloudinary(file);
-      setEditing((prev) => ({
-        ...prev,
-        imagesDraft: prev.imagesDraft.map((img) => (img.id === id ? { ...img, image_url } : img)),
-      }));
-    } finally {
-      setUploadingImgId(null);
-      e.target.value = '';
-    }
-  }
+  const [creating, setCreating] = useState(false);
+  const [createDraft, setCreateDraft] = useState(emptyDraft);
+  const [createError, setCreateError] = useState('');
+  const [createSaving, setCreateSaving] = useState(false);
 
   useEffect(() => {
     api.get('/api/programmes').then(setProgrammes);
@@ -77,6 +83,22 @@ export default function ProgrammesAdmin() {
     });
   }
 
+  async function handleImageUpload(id, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImgId(id);
+    try {
+      const image_url = await uploadToCloudinary(file);
+      setEditing((prev) => ({
+        ...prev,
+        imagesDraft: prev.imagesDraft.map((img) => (img.id === id ? { ...img, image_url } : img)),
+      }));
+    } finally {
+      setUploadingImgId(null);
+      e.target.value = '';
+    }
+  }
+
   async function saveEdit() {
     const body = editing.bodyDraft
       .split(/\n\s*\n/)
@@ -97,10 +119,66 @@ export default function ProgrammesAdmin() {
     }
   }
 
+  function openCreate() {
+    setCreateDraft(emptyDraft);
+    setCreateError('');
+    setCreating(true);
+  }
+
+  function updateCreateField(field, value) {
+    setCreateDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'title' && !prev.slugTouched) {
+        next.slug = slugify(value);
+      }
+      return next;
+    });
+  }
+
+  async function submitCreate() {
+    setCreateError('');
+
+    if (!createDraft.title.trim() || !createDraft.slug.trim() || !createDraft.icon) {
+      setCreateError('Title, slug, and icon are all required.');
+      return;
+    }
+
+    const body = createDraft.body
+      .split(/\n\s*\n/)
+      .map((para) => para.trim())
+      .filter(Boolean);
+
+    if (body.length === 0) {
+      setCreateError('Add at least one paragraph of body content.');
+      return;
+    }
+
+    setCreateSaving(true);
+    try {
+      const created = await api.post('/api/admin/programmes', {
+        slug: createDraft.slug.trim(),
+        icon: createDraft.icon,
+        title: createDraft.title.trim(),
+        teaser: createDraft.teaser.trim() || body[0],
+        body,
+        images: [],
+      });
+      setProgrammes((prev) => [...prev, created]);
+      setCreating(false);
+    } catch (err) {
+      setCreateError(err.message || 'Something went wrong creating that programme.');
+    } finally {
+      setCreateSaving(false);
+    }
+  }
+
+  const SelectedIcon = PROGRAMME_ICONS[createDraft.icon];
+
   return (
     <ProtectedSection section="programmes" title="Programmes">
       <div className={styles.toolbar}>
         <p className={styles.hint}>Changes here save immediately to the database.</p>
+        <button className="a-btn a-btn-primary" onClick={openCreate}>+ Add programme</button>
       </div>
 
       <DataTable
@@ -118,6 +196,90 @@ export default function ProgrammesAdmin() {
           </tr>
         )}
       />
+
+      {creating && (
+        <Modal
+          title="Add a new programme"
+          onClose={() => setCreating(false)}
+          wide
+          footer={
+            <>
+              <button className="a-btn" onClick={() => setCreating(false)}>Cancel</button>
+              <button className="a-btn a-btn-primary" onClick={submitCreate} disabled={createSaving}>
+                {createSaving ? 'Creating…' : 'Create programme'}
+              </button>
+            </>
+          }
+        >
+          <div>
+            <label htmlFor="new-title">Title</label>
+            <input
+              id="new-title"
+              value={createDraft.title}
+              onChange={(e) => updateCreateField('title', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="new-slug">Slug (used in the URL — /programmes/&lt;slug&gt;)</label>
+            <input
+              id="new-slug"
+              value={createDraft.slug}
+              onChange={(e) => {
+                setCreateDraft((prev) => ({ ...prev, slugTouched: true }));
+                updateCreateField('slug', slugify(e.target.value));
+              }}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="new-icon">Icon</label>
+            <div className={styles.iconPickerRow}>
+              <select
+                id="new-icon"
+                value={createDraft.icon}
+                onChange={(e) => updateCreateField('icon', e.target.value)}
+              >
+                <option value="">Select an icon…</option>
+                {PROGRAMME_ICON_NAMES.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <span className={styles.iconPreview}>
+                {SelectedIcon ? <SelectedIcon size={22} strokeWidth={1.75} /> : '—'}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="new-teaser">Teaser (shown on the Programmes overview — optional, defaults to first paragraph)</label>
+            <textarea
+              id="new-teaser"
+              rows={2}
+              value={createDraft.teaser}
+              onChange={(e) => updateCreateField('teaser', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="new-body">
+              Full content (detail page — separate paragraphs with a blank line)
+            </label>
+            <textarea
+              id="new-body"
+              rows={8}
+              value={createDraft.body}
+              onChange={(e) => updateCreateField('body', e.target.value)}
+            />
+          </div>
+
+          {createError && <p className={styles.error}>{createError}</p>}
+
+          <p className={styles.hint}>
+            Photos and the programme number are set automatically — photos can be added after creating the programme, from its Edit screen.
+          </p>
+        </Modal>
+      )}
 
       {editing && (
         <Modal
