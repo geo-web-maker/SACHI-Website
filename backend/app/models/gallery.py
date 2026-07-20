@@ -18,3 +18,4 @@ class GalleryPhotoCreate(BaseModel):
 
 class GalleryPhotoUpdate(BaseModel):
     caption: str | None = None
+    image_url: str | None = None   # added
