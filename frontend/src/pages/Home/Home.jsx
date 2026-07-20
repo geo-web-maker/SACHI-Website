@@ -1,8 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import {
-  Search, Droplet, ShieldCheck, HardHat, Wheat, HeartPulse, Stethoscope, Handshake,
-} from 'lucide-react';
+import { PROGRAMME_ICONS } from '../../data/programmeIcons';
 import PageHead from '../../components/PageHead/PageHead';
 import StatStrip from '../../components/StatStrip/StatStrip';
 import SupportNote from '../../components/SupportNote/SupportNote';
@@ -29,6 +27,8 @@ const rotatingWords = ['water', 'research', 'nutrition', 'safety', 'people'];
 // One representative image per programme, so the hero slideshow shows real
 // programme variety rather than a single decorative photo.
 const heroImages = programmes.map((p) => ({ id: p.slug, caption: p.title }));
+
+const iconMap = PROGRAMME_ICONS;
 
 export default function Home() {
   return (
