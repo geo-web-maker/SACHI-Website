@@ -33,10 +33,13 @@ async def create_programme(body: ProgrammeCreate, db: AsyncIOMotorDatabase = Dep
     existing = await db.programmes.find_one({"slug": body.slug})
     if existing is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "A programme with that slug already exists")
-    result = await db.programmes.insert_one(body.model_dump())
-    doc = await db.programmes.find_one({"_id": result.inserted_id})
-    return doc
 
+    count = await db.programmes.count_documents({})
+    num = str(count + 1).zfill(2)
+
+    doc = {**body.model_dump(), "num": num}
+    result = await db.programmes.insert_one(doc)
+    return await db.programmes.find_one({"_id": result.inserted_id})
 
 @router.patch(
     "/api/admin/programmes/{slug}",
