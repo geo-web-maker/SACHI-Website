@@ -6,6 +6,7 @@ from app.models.common import PyObjectId
 class ProgrammeImage(BaseModel):
     id: str
     caption: str
+    image_url: str | None = None   # added
 
 
 class ProgrammeOut(BaseModel):
