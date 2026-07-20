@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { uploadToCloudinary } from '../../../lib/cloudinary';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
@@ -18,6 +19,23 @@ export default function ProgrammesAdmin() {
   const [programmes, setProgrammes] = useState([]);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImgId, setUploadingImgId] = useState(null);
+
+  async function handleImageUpload(id, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImgId(id);
+    try {
+      const image_url = await uploadToCloudinary(file);
+      setEditing((prev) => ({
+        ...prev,
+        imagesDraft: prev.imagesDraft.map((img) => (img.id === id ? { ...img, image_url } : img)),
+      }));
+    } finally {
+      setUploadingImgId(null);
+      e.target.value = '';
+    }
+  }
 
   useEffect(() => {
     api.get('/api/programmes').then(setProgrammes);
@@ -138,11 +156,17 @@ export default function ProgrammesAdmin() {
           </div>
 
           <div>
-            <label>Photos (used in both the header and gallery slideshow)</label>
-            <div className={styles.imageList}>
               {editing.imagesDraft.map((img, i) => (
                 <div className={styles.imageRow} key={img.id}>
-                  <div className={styles.imageThumb}>[ photo ]</div>
+                  <div className={styles.imageThumb}>
+                    {img.image_url ? <img src={img.image_url} alt={img.caption} /> : '[ photo ]'}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(img.id, e)}
+                    disabled={uploadingImgId === img.id}
+                  />
                   <input
                     value={img.caption}
                     onChange={(e) => updateImageCaption(img.id, e.target.value)}
