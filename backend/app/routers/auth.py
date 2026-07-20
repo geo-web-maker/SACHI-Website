@@ -23,7 +23,7 @@ async def login(body: LoginRequest, response: Response, db: AsyncIOMotorDatabase
         value=token,
         httponly=True,
         secure=settings.cookie_secure,
-        samesite="lax",
+        samesite="none",   # was "lax" — required for cross-site (Vercel → Render) cookies
         max_age=settings.jwt_expire_minutes * 60,
     )
 
@@ -38,9 +38,12 @@ async def login(body: LoginRequest, response: Response, db: AsyncIOMotorDatabase
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(COOKIE_NAME)
+    response.delete_cookie(
+        COOKIE_NAME,
+        samesite="none",     # must match set_cookie or the browser won't clear it
+        secure=settings.cookie_secure,
+    )
     return {"ok": True}
-
 
 @router.get("/me", response_model=MeOut)
 async def me(user: dict = Depends(get_current_user)):
