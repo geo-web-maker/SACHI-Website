@@ -13,7 +13,7 @@ import { modelPillars } from '../../data/modelPillars';
 import { faqs } from '../../data/faqs';
 import styles from './Home.module.css';
 
-const iconMap = { Search, Droplet, ShieldCheck, HardHat, Wheat, HeartPulse, Stethoscope, Handshake };
+const iconMap = PROGRAMME_ICONS;
 
 const stats = [
   { num: '2022', label: 'Founded in Kampala' },
@@ -27,8 +27,6 @@ const rotatingWords = ['water', 'research', 'nutrition', 'safety', 'people'];
 // One representative image per programme, so the hero slideshow shows real
 // programme variety rather than a single decorative photo.
 const heroImages = programmes.map((p) => ({ id: p.slug, caption: p.title }));
-
-const iconMap = PROGRAMME_ICONS;
 
 export default function Home() {
   return (
