@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './Slideshow.module.css';
 
+// Bounds so a very tall or very wide photo doesn't stretch the layout to
+// an extreme. Within this range, the box follows the photo's real shape.
+const MIN_ASPECT = 4 / 3;   // don't go narrower/taller than 4:3
+const MAX_ASPECT = 16 / 7;  // don't go wider/shorter than roughly 16:7
+
 export default function Slideshow({
   images,
   aspect = '16 / 8',
@@ -10,9 +15,22 @@ export default function Slideshow({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [liveAspect, setLiveAspect] = useState(null);
   const timerRef = useRef(null);
 
   const count = images?.length ?? 0;
+
+  useEffect(() => {
+    setLiveAspect(null);
+  }, [index]);
+
+  const handleImageLoad = (e) => {
+    const { naturalWidth, naturalHeight } = e.target;
+    if (!naturalWidth || !naturalHeight) return;
+    const ratio = naturalWidth / naturalHeight;
+    const clamped = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, ratio));
+    setLiveAspect(clamped);
+  };
 
   useEffect(() => {
     if (!autoPlay || paused || count <= 1) return undefined;
@@ -40,9 +58,15 @@ export default function Slideshow({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className={styles.slide} style={{ aspectRatio: aspect }}>
+      <div className={styles.slide} style={{ aspectRatio: liveAspect ?? aspect }}>
         {current.image_url ? (
-          <img className={styles.slideImg} src={current.image_url} alt={current.caption} />
+          <img
+            key={current.id}
+            className={styles.slideImg}
+            src={current.image_url}
+            alt={current.caption}
+            onLoad={handleImageLoad}
+          />
         ) : (
           <span className={styles.placeholder}>[ {current.caption} ]</span>
         )}
