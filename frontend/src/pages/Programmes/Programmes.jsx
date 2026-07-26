@@ -29,6 +29,7 @@ export default function Programmes() {
               num={p.num}
               title={p.title}
               teaser={p.teaser}
+              images={p.images}
               flip={i % 2 === 1}
             />
           ))}
