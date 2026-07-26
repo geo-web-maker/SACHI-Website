@@ -12,6 +12,7 @@ export default function Slideshow({
   showThumbnails = false,
   autoPlay = true,
   intervalMs = 4000,
+  hideCaption = false,
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -70,7 +71,7 @@ export default function Slideshow({
         ) : (
           <span className={styles.placeholder}>[ {current.caption} ]</span>
         )}
-        <div className={styles.captionBar}>{current.caption}</div>
+        {!hideCaption && <div className={styles.captionBar}>{current.caption}</div>}
       </div>
 
       {count > 1 && showThumbnails && (
