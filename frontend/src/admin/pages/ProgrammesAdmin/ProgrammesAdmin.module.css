@@ -46,6 +46,13 @@
   font-family: var(--a-font-mono);
   font-size: 8px;
   text-align: center;
+  overflow: hidden;
+}
+
+.imageThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .imageActions {
