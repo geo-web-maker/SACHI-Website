@@ -25,8 +25,14 @@ const stats = [
 const rotatingWords = ['water', 'research', 'nutrition', 'safety', 'people'];
 
 // One representative image per programme, so the hero slideshow shows real
-// programme variety rather than a single decorative photo.
-const heroImages = programmes.map((p) => ({ id: p.slug, caption: p.title }));
+// programme variety rather than a single decorative photo. Images are
+// committed to the repo under /public/images/hero and referenced by path —
+// see programmes.js `heroImage` field.
+const heroImages = programmes.map((p) => ({
+  id: p.slug,
+  caption: p.title,
+  image_url: p.heroImage,
+}));
 
 export default function Home() {
   return (

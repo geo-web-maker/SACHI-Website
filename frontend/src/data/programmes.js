@@ -1,6 +1,7 @@
 export const programmes = [
   {
     slug: 'participatory-action-research',
+    heroImage: '/images/hero/participatory-action-research.svg',
     icon: 'Search',
     num: '01',
     title: 'Participatory Action Research',
@@ -17,6 +18,7 @@ export const programmes = [
   },
   {
     slug: 'wash-environmental-health',
+    heroImage: '/images/hero/wash-environmental-health.svg',
     icon: 'Droplet',
     num: '02',
     title: 'WASH and Environmental Health',
@@ -35,6 +37,7 @@ export const programmes = [
   },
   {
     slug: 'disease-prevention-control',
+    heroImage: '/images/hero/disease-prevention-control.svg',
     icon: 'ShieldCheck',
     num: '03',
     title: 'Disease Prevention & Control',
@@ -49,6 +52,7 @@ export const programmes = [
   },
   {
     slug: 'occupational-health-safety',
+    heroImage: '/images/hero/occupational-health-safety.svg',
     icon: 'HardHat',
     num: '04',
     title: 'Occupational Health & Safety',
@@ -65,6 +69,7 @@ export const programmes = [
   },
   {
     slug: 'nutrition-food-security',
+    heroImage: '/images/hero/nutrition-food-security.svg',
     icon: 'Wheat',
     num: '05',
     title: 'Nutrition and Food Security',
@@ -80,6 +85,7 @@ export const programmes = [
   },
   {
     slug: 'sexual-reproductive-health',
+    heroImage: '/images/hero/sexual-reproductive-health.svg',
     icon: 'HeartPulse',
     num: '06',
     title: 'Sexual and Reproductive Health',
@@ -93,6 +99,7 @@ export const programmes = [
   },
   {
     slug: 'health-care-disease-prevention',
+    heroImage: '/images/hero/health-care-disease-prevention.svg',
     icon: 'Stethoscope',
     num: '07',
     title: 'Health Care and Disease Prevention',
@@ -107,6 +114,7 @@ export const programmes = [
   },
   {
     slug: 'livelihood-vulnerable',
+    heroImage: '/images/hero/livelihood-vulnerable.svg',
     icon: 'Handshake',
     num: '08',
     title: 'Livelihood Programme for the Vulnerable',
