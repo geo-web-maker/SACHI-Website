@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './Slideshow.module.css';
 
-// Bounds so a very tall or very wide photo doesn't stretch the layout to
-// an extreme. Within this range, the box follows the photo's real shape.
-const MIN_ASPECT = 4 / 3;   // don't go narrower/taller than 4:3
-const MAX_ASPECT = 16 / 7;  // don't go wider/shorter than roughly 16:7
+// The slide frame adopts each photo's real aspect ratio once it loads (see
+// handleImageLoad below), so images always display in full via
+// object-fit: contain rather than being cropped or force-fitted into a
+// fixed box shape. `aspect` is only a fallback used before the image loads.
 
 export default function Slideshow({
   images,
@@ -28,9 +28,7 @@ export default function Slideshow({
   const handleImageLoad = (e) => {
     const { naturalWidth, naturalHeight } = e.target;
     if (!naturalWidth || !naturalHeight) return;
-    const ratio = naturalWidth / naturalHeight;
-    const clamped = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, ratio));
-    setLiveAspect(clamped);
+    setLiveAspect(naturalWidth / naturalHeight);
   };
 
   useEffect(() => {
