@@ -27,12 +27,16 @@ const rotatingWords = ['water', 'research', 'nutrition', 'safety', 'people'];
 // One representative image per programme, so the hero slideshow shows real
 // programme variety rather than a single decorative photo. Images are
 // committed to the repo under /public/images/hero and referenced by path —
-// see programmes.js `heroImage` field.
-const heroImages = programmes.map((p) => ({
-  id: p.slug,
-  caption: p.title,
-  image_url: p.heroImage,
-}));
+// see programmes.js `heroImage` field. Programmes without a real photo yet
+// (still on a placeholder .svg) are skipped here rather than shown as an
+// empty/placeholder slide — see public/images/README.md for what's missing.
+const heroImages = programmes
+  .filter((p) => p.heroImage && !p.heroImage.endsWith('.svg'))
+  .map((p) => ({
+    id: p.slug,
+    caption: p.title,
+    image_url: p.heroImage,
+  }));
 
 export default function Home() {
   return (

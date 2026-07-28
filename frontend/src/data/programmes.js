@@ -18,7 +18,6 @@ export const programmes = [
   },
   {
     slug: 'wash-environmental-health',
-    heroImage: '/images/hero/wash-environmental-health.svg',
     icon: 'Droplet',
     num: '02',
     title: 'WASH and Environmental Health',
