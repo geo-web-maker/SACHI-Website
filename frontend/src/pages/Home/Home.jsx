@@ -124,6 +124,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* WASH deep-dive — one programme featured in more depth as an example */}
+      <section className={styles.section}>
+        <div className={`${styles.inner} wrap`}>
+          <div className={styles.eyebrowLabel}>Programme spotlight</div>
+          <h2 className={styles.h2}>WASH and environmental health</h2>
+          <p className={styles.programmeText}>
+            Water, sanitation, and hygiene sit at the root of preventable disease. We build access, not just awareness.
+          </p>
+          <div className={styles.programmeGrid}>
+            <div className={styles.programmePhoto}>[ community water point ]</div>
+            <div className={styles.programmeCard}>
+              <div className={styles.cardIcon}>1</div>
+              <h3>Safe water access</h3>
+              <p>Clean drinking water and sanitary facilities in schools and healthcare centres.</p>
+            </div>
+            <div className={styles.programmeCard}>
+              <div className={styles.cardIcon}>2</div>
+              <h3>Hygiene practice</h3>
+              <p>Household-level behaviour change for handwashing and safe food handling.</p>
+            </div>
+          </div>
+          <Link to="/programmes" className={styles.btnGhostDark}>See all 8 programme areas &rarr;</Link>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className={styles.section}>
         <div className={`${styles.inner} wrap`}>

@@ -17,8 +17,7 @@ export default function Nav() {
     <header className={styles.header}>
       <div className={`${styles.inner} wrap`}>
         <NavLink to="/" className={styles.mark} onClick={() => setOpen(false)}>
-          <span className={styles.markDot} />
-          SACHI
+          <img src="/brand/logo-sachi.png" alt="SACHI" className={styles.markLogo} />
         </NavLink>
 
         <nav className={styles.navDesktop}>
