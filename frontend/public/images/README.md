@@ -17,10 +17,12 @@ Recommended: square-ish, at least 1200×1200px, JPG.
 - `sexual-reproductive-health.jpg` — real photo ✅
 - `health-care-disease-prevention.jpg` — real photo ✅
 - `livelihood-vulnerable.jpg` — real photo ✅
-- `wash-environmental-health.svg` — still a placeholder. None of the photos
-  supplied so far show WASH activity specifically (borehole, handwashing,
-  latrines, water points) — send one when available and it'll slot straight
-  in as `wash-environmental-health.jpg`.
+- `wash-environmental-health` — no file yet. None of the photos supplied so
+  far show WASH activity specifically (borehole, handwashing, latrines,
+  water points). This programme is simply skipped in the hero rotation until
+  a real photo is added — send one and add it as
+  `wash-environmental-health.jpg`, then add the `heroImage` field back into
+  `programmes.js` for that programme.
 
 Wired up in `src/data/programmes.js` via each programme's `heroImage` field.
 
