@@ -11,6 +11,11 @@ import styles from './Slideshow.module.css';
 // swapped one at a time, so slide changes crossfade smoothly instead of
 // hard-cutting, and each photo's aspect ratio is already known by the time
 // its slide becomes active (no reload/flash).
+//
+// Identity for each slide is keyed by its array position, not img.id —
+// backend/Cloudinary-sourced photos don't always carry a stable id field,
+// and reusing one key across multiple images breaks React's ability to
+// tell them apart once the slideshow auto-advances.
 
 export default function Slideshow({
   images,
@@ -26,10 +31,10 @@ export default function Slideshow({
 
   const count = images?.length ?? 0;
 
-  const handleImageLoad = (id) => (e) => {
+  const handleImageLoad = (i) => (e) => {
     const { naturalWidth, naturalHeight } = e.target;
     if (!naturalWidth || !naturalHeight) return;
-    setAspects((prev) => ({ ...prev, [id]: naturalWidth / naturalHeight }));
+    setAspects((prev) => ({ ...prev, [i]: naturalWidth / naturalHeight }));
   };
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export default function Slideshow({
   }
 
   const current = images[index];
-  const liveAspect = aspects[current.id];
+  const liveAspect = aspects[index];
 
   return (
     <div
@@ -63,11 +68,11 @@ export default function Slideshow({
         {images.map((img, i) =>
           img.image_url ? (
             <img
-              key={img.id}
+              key={img.id ?? i}
               className={`${styles.slideImg} ${i === index ? styles.slideImgActive : ''}`}
               src={img.image_url}
               alt={img.caption}
-              onLoad={handleImageLoad(img.id)}
+              onLoad={handleImageLoad(i)}
             />
           ) : null
         )}
@@ -80,7 +85,7 @@ export default function Slideshow({
         <div className={styles.thumbRow}>
           {images.map((img, i) => (
             <button
-              key={img.id}
+              key={img.id ?? i}
               className={`${styles.thumb} ${i === index ? styles.thumbActive : ''}`}
               onClick={() => setIndex(i)}
             >
