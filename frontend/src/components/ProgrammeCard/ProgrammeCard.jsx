@@ -16,7 +16,6 @@ export default function ProgrammeCard({ slug, num, title, teaser, images, flip }
             images={photos}
             aspect="4 / 3"
             intervalMs={9000}
-            hideCaption
           />
         ) : (
           '[ programme photography ]'

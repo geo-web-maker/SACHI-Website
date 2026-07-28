@@ -3,8 +3,14 @@ import styles from './Slideshow.module.css';
 
 // The slide frame adopts each photo's real aspect ratio once it loads (see
 // handleImageLoad below), so images always display in full via
-// object-fit: contain rather than being cropped or force-fitted into a
-// fixed box shape. `aspect` is only a fallback used before the image loads.
+// object-fit: cover with minimal cropping, rather than being force-fitted
+// into a mismatched box shape. `aspect` is only a fallback used before any
+// image has loaded.
+//
+// All photos are mounted at once (stacked, opacity-toggled) rather than
+// swapped one at a time, so slide changes crossfade smoothly instead of
+// hard-cutting, and each photo's aspect ratio is already known by the time
+// its slide becomes active (no reload/flash).
 
 export default function Slideshow({
   images,
@@ -15,19 +21,15 @@ export default function Slideshow({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [liveAspect, setLiveAspect] = useState(null);
+  const [aspects, setAspects] = useState({});
   const timerRef = useRef(null);
 
   const count = images?.length ?? 0;
 
-  useEffect(() => {
-    setLiveAspect(null);
-  }, [index]);
-
-  const handleImageLoad = (e) => {
+  const handleImageLoad = (id) => (e) => {
     const { naturalWidth, naturalHeight } = e.target;
     if (!naturalWidth || !naturalHeight) return;
-    setLiveAspect(naturalWidth / naturalHeight);
+    setAspects((prev) => ({ ...prev, [id]: naturalWidth / naturalHeight }));
   };
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function Slideshow({
   }
 
   const current = images[index];
+  const liveAspect = aspects[current.id];
 
   return (
     <div
@@ -57,15 +60,18 @@ export default function Slideshow({
       onMouseLeave={() => setPaused(false)}
     >
       <div className={styles.slide} style={{ aspectRatio: liveAspect ?? aspect }}>
-        {current.image_url ? (
-          <img
-            key={current.id}
-            className={styles.slideImg}
-            src={current.image_url}
-            alt={current.caption}
-            onLoad={handleImageLoad}
-          />
-        ) : (
+        {images.map((img, i) =>
+          img.image_url ? (
+            <img
+              key={img.id}
+              className={`${styles.slideImg} ${i === index ? styles.slideImgActive : ''}`}
+              src={img.image_url}
+              alt={img.caption}
+              onLoad={handleImageLoad(img.id)}
+            />
+          ) : null
+        )}
+        {!current.image_url && (
           <span className={styles.placeholder}>[ {current.caption} ]</span>
         )}
       </div>
