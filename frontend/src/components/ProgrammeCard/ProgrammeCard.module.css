@@ -31,6 +31,7 @@
   text-align: center;
   transition: filter 0.15s ease;
   overflow: hidden;
+  width: 100%;
 }
 
 .photoEmpty {
