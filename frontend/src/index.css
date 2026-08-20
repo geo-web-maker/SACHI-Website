@@ -1,0 +1,274 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* --- LIGHT MODE (Default) --- */
+  --bg-color: #fafafa;
+  --card-bg: #ffffff;
+  --surface-2: #f0f1f3;       /* nested panels, hover states */
+  --border-color: #e2e2e5;
+  --text-color: #1e2530;      /* near-navy charcoal, ties back to brand */
+  --text-muted: #6b7280;
+  --brand-primary: #003366;
+  --brand-accent:  #f1c40f;
+
+  /* --- Semantic status colors (same across light/dark) --- */
+  --success: #2ecc71;
+  --danger:  #e74c3c;
+  --warning: #f1c40f;
+  --info:    #3498db;
+  --accent-purple: #9b59b6;
+
+
+  color-scheme: light dark;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- DARK MODE (OS preference, overridden by [data-theme] below) --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0f1420;
+    --card-bg: #1a2030;
+    --surface-2: #242b3d;
+    --border-color: #2a3145;
+    --text-color: #e7e9ee;
+    --text-muted: #9aa3b5;
+  }
+}
+
+/* --- Manual override, takes priority over OS preference --- */
+[data-theme="light"] {
+  --bg-color: #fafafa;
+  --card-bg: #ffffff;
+  --surface-2: #f0f1f3;
+  --border-color: #e2e2e5;
+  --text-color: #1e2530;
+  --text-muted: #6b7280;
+}
+
+[data-theme="dark"] {
+  --bg-color: #0f1420;
+  --card-bg: #1a2030;
+  --surface-2: #242b3d;
+  --border-color: #2a3145;
+  --text-color: #e7e9ee;
+  --text-muted: #9aa3b5;
+}
+
+body {
+  margin: 0;
+  display: block; /* Changed from flex to allow our App container to take control */
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  /* Add this to prevent system themes from washing out your specific colors */
+  /*color-scheme: only light;*/
+}
+
+/* Ensure all headings use the variable color */
+h1, h2, h3, h4, p {
+  color: var(--text-color);
+}
+
+a {
+  font-weight: 500;
+  color: var(--brand-primary);
+  text-decoration: inherit;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+button:hover {
+  border-color: var(--brand-accent);
+}
+
+/* --- GLOBAL ELECTION PRINT SYSTEM --- */
+
+/* By default, hide the report on the screen */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* Specific styles when the Print Dialog opens (Ctrl+P or Button) */
+@media print {
+  /* 1. Hide the website UI (Navbar, Buttons, Sidebar, Progress Bars) */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 2. Show and style the clean Report */
+  .print-only {
+    display: block !important;
+    padding: 15mm; 
+    color: black !important;
+    background: white !important;
+    font-family: "Times New Roman", serif; /* Professional font for reports */
+  }
+
+  /* 3. The Logo/Watermark Styling */
+  .report-logo {
+    display: block;
+    margin: 0 auto 20px auto;
+    max-width: 150px;
+    height: auto;
+  }
+
+  /* 4. Table Formatting */
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+  }
+
+  .report-table th, 
+  .report-table td {
+    border: 1px solid #000;
+    padding: 12px;
+    text-align: left;
+  }
+
+  .report-table th {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact; 
+  }
+
+  /* 5. Footer for the PDF */
+  .report-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+  }
+}
+
+@media screen {
+  /* Targets names/counts but EXCLUDES the position headers */
+  .candidate-name, 
+  .vote-count, 
+  .share-percentage,
+  h1, h2, p, span, 
+  h3:not(.position-header) { /* <--- This tells CSS: "Every h3 EXCEPT the headers" */
+    color: var(--text-color) !important;
+    opacity: 1 !important;
+  }
+
+  /* Explicitly define the White Box text color so it never changes */
+  /* Explicitly define the Header Box so it's ALWAYS visible */
+  .position-header {
+  all: unset; 
+  display: block !important;
+  background-color: #f1c40f !important; /* <--- CHANGED TO GOLD */
+  color: #1e293b !important;            /* <--- CHANGED TO DARK NAVY */
+  padding: 12px 20px !important;
+  border-radius: 10px !important;
+  border-left: 6px solid #2c3e50 !important; /* <--- DARKER ACCENT */
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  margin-bottom: 20px !important;
+  font-family: system-ui, sans-serif !important;
+  font-size: 14px !important;
+  letter-spacing: 1px !important; /* Added for that pro look */
+}
+
+/* Mobile adjustments for the navigation bar */
+@media (max-width: 600px) {
+  .no-print {
+    gap: 10px !important; /* Reduces space between buttons and logo */
+    padding: 10px 0 !important;
+  }
+
+  .no-print img {
+    height: 90px !important; /* Bigger logo on mobile, still leaves room for buttons */
+  }
+
+  .no-print button {
+    padding: 8px 12px !important; /* Smaller buttons for small screens */
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
+  }
+}
+
+
+/* --- Horizontally-scrolling tab bars (dashboards) --- */
+/* Prevents tabs from wrapping into a tall vertical stack on narrow screens.
+   Scoped to mobile widths only — on desktop there's enough room to just
+   wrap onto a second line, and forcing nowrap+hidden-scrollbar there was
+   silently clipping tabs (Positions/Branding/Election/etc past the fold)
+   with no visible indication more tabs existed. */
+@media (max-width: 768px) {
+  .tab-scroll {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-scroll > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
+/* --- Dashboard shell: reclaim wasted padding on phones --- */
+@media (max-width: 600px) {
+  .dashboard-shell {
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+}
+
+/* --- UNIVERSAL MODAL TEXT FIX --- */
+
+.modal-content, 
+.ballot-review-box, 
+.confirmation-modal {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.modal-content h1, 
+.modal-content h2, 
+.modal-content h3, 
+.modal-content h4, 
+.modal-content p, 
+.modal-content span,
+.modal-content strong,
+.modal-content div:not(.progress-bar) {
+  color: var(--text-color) !important;
+  opacity: 1 !important;
+}
+
+.modal-content .muted-text,
+.modal-content p {
+  color: var(--text-muted) !important;
+}
