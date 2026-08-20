@@ -1,0 +1,57 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--a-text-dim);
+  max-width: 520px;
+}
+
+.nameCell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.roleSelect {
+  border: 1px solid var(--a-border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: var(--a-font);
+  font-size: 13px;
+  background: #fff;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.error {
+  background: var(--a-danger-bg);
+  color: var(--a-danger);
+  border-radius: var(--a-radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.notice {
+  background: var(--a-success-bg);
+  color: var(--a-success);
+  border-radius: var(--a-radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.sectionsCell {
+  font-family: var(--a-font-mono);
+  font-size: 12.5px;
+  color: var(--a-text-dim);
+}

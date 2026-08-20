@@ -1,0 +1,57 @@
+.section {
+  padding: 80px var(--gutter);
+}
+
+.sectionTight {
+  padding: 80px var(--gutter);
+  padding-top: 0;
+}
+
+.narrow {
+  max-width: 760px;
+}
+
+.heroSlideshow {
+  margin-bottom: 40px;
+}
+
+.p {
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: #0e3b43cc;
+  margin-bottom: 18px;
+}
+
+.eyebrowLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.h2 {
+  font-size: 24px;
+  margin-bottom: 28px;
+}
+
+.gallerySlideshow {
+  margin-bottom: 24px;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid #0e3b431a;
+  padding-top: 28px;
+}
+
+.btnGhost {
+  color: var(--deep);
+  text-decoration: none;
+  font-size: 14.5px;
+  border-bottom: 1px solid #0e3b4355;
+}

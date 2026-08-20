@@ -1,0 +1,84 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: #0e3b4344;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.panel {
+  background: var(--a-surface);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wide {
+  max-width: 720px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--a-border);
+}
+
+.header h3 {
+  font-family: var(--a-font);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close {
+  border: none;
+  background: none;
+  font-size: 20px;
+  color: var(--a-text-dim);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.body {
+  padding: 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.body label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--a-text-dim);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.body input,
+.body select,
+.body textarea {
+  width: 100%;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--a-font);
+  font-size: 14px;
+  color: var(--a-text);
+}
+
+.footer {
+  padding: 16px 22px;
+  border-top: 1px solid var(--a-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

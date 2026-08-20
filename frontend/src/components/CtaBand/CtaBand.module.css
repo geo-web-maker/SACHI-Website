@@ -1,0 +1,28 @@
+.band {
+  background: var(--sage-l);
+  padding: 70px var(--gutter);
+  text-align: center;
+}
+
+.band h2 {
+  font-size: 30px;
+  margin-bottom: 14px;
+}
+
+.band p {
+  font-size: 15.5px;
+  color: #0e3b43cc;
+  max-width: 520px;
+  margin: 0 auto 26px;
+}
+
+.btn {
+  background: var(--deep);
+  color: var(--cream);
+  text-decoration: none;
+  padding: 14px 24px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 14.5px;
+  display: inline-block;
+}
