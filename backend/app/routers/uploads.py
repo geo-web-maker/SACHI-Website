@@ -4,7 +4,7 @@ import time
 from fastapi import APIRouter, Depends
 
 from app.core.config import settings
-from app.deps import get_current_user
+from app.deps import require_password_current
 
 router = APIRouter(prefix="/api/admin/uploads", tags=["uploads"])
 
@@ -17,7 +17,7 @@ UPLOAD_FOLDER = "sachi"
 
 
 @router.post("/cloudinary-signature")
-async def get_cloudinary_signature(user: dict = Depends(get_current_user)):
+async def get_cloudinary_signature(user: dict = Depends(require_password_current)):
     timestamp = int(time.time())
 
     params_to_sign = {

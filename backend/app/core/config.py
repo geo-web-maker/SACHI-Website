@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
 
+    egosms_username: str = ""
+    egosms_password: str = ""
+    egosms_sender_id: str = "SACHI"
+    # True by default (dev-safe): logs the SMS instead of hitting the real
+    # EgoSMS API. Must be explicitly set False on Render, same pattern as
+    # cookie_secure.
+    sms_debug_mode: bool = True
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property

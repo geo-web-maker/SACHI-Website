@@ -27,6 +27,18 @@ async def get_current_user(
     return user
 
 
+def require_password_current(user: dict = Depends(get_current_user)) -> dict:
+    """Blocks every admin action except /api/auth/me, /change-password and
+    /logout while an account has a pending forced password change — the
+    'temp password' from SMS onboarding/reset shouldn't be usable for
+    anything else. require_section and require_super_admin build on this
+    rather than get_current_user directly, so it applies everywhere those
+    are used."""
+    if user.get("must_change_password"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Password change required before continuing")
+    return user
+
+
 def require_section(section: str):
     """Use as a route dependency: Depends(require_section('donations')).
 
@@ -35,7 +47,7 @@ def require_section(section: str):
     real access control.
     """
 
-    async def checker(user: dict = Depends(get_current_user)) -> dict:
+    async def checker(user: dict = Depends(require_password_current)) -> dict:
         if not role_has_section(user["role"], section):
             raise HTTPException(status.HTTP_403_FORBIDDEN, f"Your role can't access '{section}'")
         return user
@@ -43,7 +55,7 @@ def require_section(section: str):
     return checker
 
 
-def require_super_admin(user: dict = Depends(get_current_user)) -> dict:
+def require_super_admin(user: dict = Depends(require_password_current)) -> dict:
     if user["role"] != "super_admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Super admin only")
     return user

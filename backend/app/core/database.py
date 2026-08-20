@@ -25,6 +25,7 @@ async def ensure_indexes() -> None:
     await db.jobs.create_index([("title", "text"), ("keywords", "text")])
     await db.contact_submissions.create_index("created_at")
     await db.donations.create_index("created_at")
+    await db.login_attempts.create_index("expires_at", expireAfterSeconds=0)
 
 
 async def close_client() -> None:
