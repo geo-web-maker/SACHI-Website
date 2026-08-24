@@ -34,6 +34,16 @@ async def list_open_jobs(
     return docs
 
 
+@router.get("/api/jobs/{job_id}", response_model=JobOut)
+async def get_job(job_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    if not ObjectId.is_valid(job_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job not found")
+    doc = await db.jobs.find_one({"_id": ObjectId(job_id), "status": "Open"})
+    if doc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job not found")
+    return doc
+
+
 @router.get(
     "/api/admin/jobs",
     response_model=list[JobOut],

@@ -24,12 +24,12 @@ PROGRAMMES = [
             "Where we collaborate with community members and stakeholders to identify local "
             "health problems, design investigations, and implement practical health solutions."
         ),
-        "body": [
-            "Where we collaborate with community members and stakeholders to identify local "
-            "health problems, design investigations and implement practical health solutions.",
-            "For example, during a cholera outbreak, we work with slum dwellers to explore how "
-            "the outbreak impacts their local community.",
-        ],
+        "body": (
+            "<p>Where we collaborate with community members and stakeholders to identify local "
+            "health problems, design investigations and implement practical health solutions.</p>"
+            "<p>For example, during a cholera outbreak, we work with slum dwellers to explore how "
+            "the outbreak impacts their local community.</p>"
+        ),
         "images": [
             {"id": "participatory-action-research-1", "caption": "Community data review session"},
             {"id": "participatory-action-research-2", "caption": "Stakeholder workshop"},
@@ -46,6 +46,7 @@ JOBS = [
         "remote": False,
         "keywords": "community health outreach field",
         "status": "Open",
+        "description": "<p>Add a full description for this role from the Career admin screen.</p>",
     },
     {
         "title": "WASH Field Coordinator",
@@ -54,6 +55,7 @@ JOBS = [
         "remote": False,
         "keywords": "wash water sanitation field coordinator",
         "status": "Open",
+        "description": "<p>Add a full description for this role from the Career admin screen.</p>",
     },
     {
         "title": "Grant Writer",
@@ -62,6 +64,7 @@ JOBS = [
         "remote": True,
         "keywords": "grant writing proposals fundraising",
         "status": "Open",
+        "description": "<p>Add a full description for this role from the Career admin screen.</p>",
     },
     # ... add the rest from src/data/jobs.js
 ]

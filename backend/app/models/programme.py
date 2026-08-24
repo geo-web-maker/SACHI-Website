@@ -17,8 +17,8 @@ class ProgrammeOut(BaseModel):
     icon: str
     num: str
     title: str
-    teaser: str
-    body: list[str]
+    teaser: str  # HTML, authored via the RichTextEditor
+    body: str  # HTML, authored via the RichTextEditor
     images: list[ProgrammeImage]
 
 
@@ -27,7 +27,7 @@ class ProgrammeCreate(BaseModel):
     icon: str
     title: str
     teaser: str
-    body: list[str]
+    body: str
     images: list[ProgrammeImage] = []
     # num intentionally omitted — assigned server-side in the router
 
@@ -37,5 +37,5 @@ class ProgrammeUpdate(BaseModel):
 
     icon: str | None = None
     teaser: str | None = None
-    body: list[str] | None = None
+    body: str | None = None
     images: list[ProgrammeImage] | None = None

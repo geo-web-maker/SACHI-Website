@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.database import get_database
-from app.deps import require_password_current
+from app.deps import get_current_user
 from app.models.common import role_has_section
 
 router = APIRouter(prefix="/api/admin/dashboard", tags=["dashboard"])
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/admin/dashboard", tags=["dashboard"])
 
 @router.get("/stats")
 async def dashboard_stats(
-    user: dict = Depends(require_password_current), db: AsyncIOMotorDatabase = Depends(get_database)
+    user: dict = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     role = user["role"]
     stats: dict = {}
