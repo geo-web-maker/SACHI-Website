@@ -9,6 +9,7 @@ import ProgrammeDetail from './pages/ProgrammeDetail/ProgrammeDetail';
 import Gallery from './pages/Gallery/Gallery';
 import Contact from './pages/Contact/Contact';
 import Career from './pages/Career/Career';
+import JobDetail from './pages/JobDetail/JobDetail';
 import Donate from './pages/Donate/Donate';
 
 import { RoleProvider } from './admin/context/RoleContext';
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/gallery" element={<PublicLayout><Gallery /></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
             <Route path="/career" element={<PublicLayout><Career /></PublicLayout>} />
+            <Route path="/career/:id" element={<PublicLayout><JobDetail /></PublicLayout>} />
             <Route path="/donate" element={<PublicLayout><Donate /></PublicLayout>} />
 
             {/* Admin */}

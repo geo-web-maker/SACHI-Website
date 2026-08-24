@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import PageHead from '../../components/PageHead/PageHead';
 import CtaBand from '../../components/CtaBand/CtaBand';
@@ -108,7 +109,7 @@ export default function Career() {
                     <h3>{job.title}</h3>
                     <p>{job.type} · {job.location}{job.remote ? ' · Remote OK' : ''}</p>
                   </div>
-                  <a href="#" className={styles.viewLink}>View role &rarr;</a>
+                  <Link to={`/career/${job.id}`} className={styles.viewLink}>View role &rarr;</Link>
                 </div>
               ))}
             </div>

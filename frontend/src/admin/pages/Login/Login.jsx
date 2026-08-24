@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
+import PasswordField from '../../components/PasswordField/PasswordField';
 import '../../styles/admin-tokens.css';
 import styles from './Login.module.css';
 
@@ -53,9 +54,8 @@ export default function Login() {
           </div>
           <div>
             <label htmlFor="password">Password</label>
-            <input
+            <PasswordField
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

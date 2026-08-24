@@ -11,8 +11,6 @@
   --a-success-bg: #E7F0E9;
   --a-warn-bg: #FBEFE3;
   --a-warn-text: #9A5B1E;
-  --a-danger: #B3261E;
-  --a-danger-bg: #FBEAEA;
   --a-radius: 10px;
   --a-font: 'IBM Plex Sans', sans-serif;
   --a-font-mono: 'IBM Plex Mono', monospace;
@@ -65,25 +63,6 @@
 
 .a-btn-primary:hover {
   background: var(--a-sidebar-hover);
-}
-
-.a-btn-danger {
-  border-color: var(--a-danger);
-  color: var(--a-danger);
-}
-
-.a-btn-danger:hover {
-  background: var(--a-danger-bg);
-}
-
-.a-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.a-btn:disabled:hover {
-  border-color: var(--a-border);
-  background: #fff;
 }
 
 .a-mono {

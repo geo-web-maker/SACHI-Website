@@ -2,15 +2,21 @@ import { useEffect, useState } from 'react';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
+import RichTextEditor from '../../../components/RichTextEditor/RichTextEditor';
 import { api } from '../../../lib/api';
 import styles from './CareerAdmin.module.css';
 
 const jobTypes = ['Freelance', 'Full Time', 'Internship', 'Part Time', 'Temporary'];
 
+const emptyDraft = { title: '', type: jobTypes[0], location: '', remote: false, description: '' };
+
 export default function CareerAdmin() {
   const [jobs, setJobs] = useState([]);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ title: '', type: jobTypes[0], location: '', remote: false });
+  const [draft, setDraft] = useState(emptyDraft);
+
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api.get('/api/admin/jobs').then(setJobs);
@@ -27,8 +33,29 @@ export default function CareerAdmin() {
     if (!draft.title.trim()) return;
     const created = await api.post('/api/admin/jobs', draft);
     setJobs((prev) => [...prev, created]);
-    setDraft({ title: '', type: jobTypes[0], location: '', remote: false });
+    setDraft(emptyDraft);
     setAdding(false);
+  }
+
+  function openEdit(job) {
+    setEditing({ ...job });
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      const updated = await api.patch(`/api/admin/jobs/${editing.id}`, {
+        title: editing.title,
+        type: editing.type,
+        location: editing.location,
+        remote: editing.remote,
+        description: editing.description,
+      });
+      setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+      setEditing(null);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -53,6 +80,7 @@ export default function CareerAdmin() {
               </span>
             </td>
             <td>
+              <button className="a-btn a-btn-sm" onClick={() => openEdit(j)}>Edit</button>{' '}
               <button className="a-btn a-btn-sm" onClick={() => toggleStatus(j.id)}>
                 {j.status === 'Open' ? 'Close role' : 'Reopen'}
               </button>
@@ -65,6 +93,7 @@ export default function CareerAdmin() {
         <Modal
           title="Add a new role"
           onClose={() => setAdding(false)}
+          wide
           footer={
             <>
               <button className="a-btn" onClick={() => setAdding(false)}>Cancel</button>
@@ -95,6 +124,79 @@ export default function CareerAdmin() {
               />
               Remote OK
             </label>
+          </div>
+          <div>
+            <label htmlFor="job-description">
+              Full description (shown on the role's public detail page)
+            </label>
+            <RichTextEditor
+              value={draft.description}
+              onChange={(html) => setDraft({ ...draft, description: html })}
+              minHeight={180}
+            />
+          </div>
+        </Modal>
+      )}
+
+      {editing && (
+        <Modal
+          title={`Edit — ${editing.title}`}
+          onClose={() => setEditing(null)}
+          wide
+          footer={
+            <>
+              <button className="a-btn" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="a-btn a-btn-primary" onClick={saveEdit} disabled={saving}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </>
+          }
+        >
+          <div>
+            <label htmlFor="edit-title">Title</label>
+            <input
+              id="edit-title"
+              value={editing.title}
+              onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+            />
+          </div>
+          <div>
+            <label htmlFor="edit-type">Type</label>
+            <select
+              id="edit-type"
+              value={editing.type}
+              onChange={(e) => setEditing({ ...editing, type: e.target.value })}
+            >
+              {jobTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="edit-location">Location</label>
+            <input
+              id="edit-location"
+              value={editing.location}
+              onChange={(e) => setEditing({ ...editing, location: e.target.value })}
+            />
+          </div>
+          <div className={styles.checkRow}>
+            <label className={styles.checkLabel}>
+              <input
+                type="checkbox"
+                checked={editing.remote}
+                onChange={(e) => setEditing({ ...editing, remote: e.target.checked })}
+              />
+              Remote OK
+            </label>
+          </div>
+          <div>
+            <label htmlFor="edit-description">
+              Full description (shown on the role's public detail page)
+            </label>
+            <RichTextEditor
+              value={editing.description}
+              onChange={(html) => setEditing({ ...editing, description: html })}
+              minHeight={180}
+            />
           </div>
         </Modal>
       )}

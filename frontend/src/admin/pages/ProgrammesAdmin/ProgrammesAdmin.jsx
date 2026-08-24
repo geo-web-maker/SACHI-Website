@@ -3,9 +3,15 @@ import { uploadToCloudinary } from '../../../lib/cloudinary';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
+import RichTextEditor from '../../../components/RichTextEditor/RichTextEditor';
 import { api } from '../../../lib/api';
 import { PROGRAMME_ICONS, PROGRAMME_ICON_NAMES } from '../../../data/programmeIcons';
 import styles from './ProgrammesAdmin.module.css';
+
+// Tiptap's "empty" content is <p></p>, not '' — treat both as blank.
+function isBlankHtml(html) {
+  return !html || html.trim() === '' || html.trim() === '<p></p>';
+}
 
 const emptyDraft = {
   slug: '',
@@ -19,7 +25,7 @@ function toDraft(p) {
   return {
     ...p,
     teaserDraft: p.teaser,
-    bodyDraft: p.body.join('\n\n'),
+    bodyDraft: p.body,
     imagesDraft: p.images.map((img) => ({ ...img })),
   };
 }
@@ -100,17 +106,12 @@ export default function ProgrammesAdmin() {
   }
 
   async function saveEdit() {
-    const body = editing.bodyDraft
-      .split(/\n\s*\n/)
-      .map((para) => para.trim())
-      .filter(Boolean);
-
     setSaving(true);
     try {
       const updated = await api.patch(`/api/admin/programmes/${editing.slug}`, {
         icon: editing.icon,
         teaser: editing.teaserDraft,
-        body,
+        body: editing.bodyDraft,
         images: editing.imagesDraft,
       });
       setProgrammes((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
@@ -144,13 +145,8 @@ export default function ProgrammesAdmin() {
       return;
     }
 
-    const body = createDraft.body
-      .split(/\n\s*\n/)
-      .map((para) => para.trim())
-      .filter(Boolean);
-
-    if (body.length === 0) {
-      setCreateError('Add at least one paragraph of body content.');
+    if (isBlankHtml(createDraft.body)) {
+      setCreateError('Add some body content.');
       return;
     }
 
@@ -160,8 +156,8 @@ export default function ProgrammesAdmin() {
         slug: createDraft.slug.trim(),
         icon: createDraft.icon,
         title: createDraft.title.trim(),
-        teaser: createDraft.teaser.trim() || body[0],
-        body,
+        teaser: isBlankHtml(createDraft.teaser) ? createDraft.body : createDraft.teaser,
+        body: createDraft.body,
         images: [],
       });
       setProgrammes((prev) => [...prev, created]);
@@ -254,24 +250,20 @@ export default function ProgrammesAdmin() {
           </div>
 
           <div>
-            <label htmlFor="new-teaser">Teaser (shown on the Programmes overview — optional, defaults to first paragraph)</label>
-            <textarea
-              id="new-teaser"
-              rows={2}
+            <label htmlFor="new-teaser">Teaser (shown on the Programmes overview — optional, defaults to the body)</label>
+            <RichTextEditor
               value={createDraft.teaser}
-              onChange={(e) => updateCreateField('teaser', e.target.value)}
+              onChange={(html) => updateCreateField('teaser', html)}
+              minHeight={80}
             />
           </div>
 
           <div>
-            <label htmlFor="new-body">
-              Full content (detail page — separate paragraphs with a blank line)
-            </label>
-            <textarea
-              id="new-body"
-              rows={8}
+            <label htmlFor="new-body">Full content (shown on the programme's detail page)</label>
+            <RichTextEditor
               value={createDraft.body}
-              onChange={(e) => updateCreateField('body', e.target.value)}
+              onChange={(html) => updateCreateField('body', html)}
+              minHeight={220}
             />
           </div>
 
@@ -318,23 +310,19 @@ export default function ProgrammesAdmin() {
 
           <div>
             <label htmlFor="teaser">Teaser (shown on the Programmes overview)</label>
-            <textarea
-              id="teaser"
-              rows={3}
+            <RichTextEditor
               value={editing.teaserDraft}
-              onChange={(e) => setEditing({ ...editing, teaserDraft: e.target.value })}
+              onChange={(html) => setEditing({ ...editing, teaserDraft: html })}
+              minHeight={90}
             />
           </div>
 
           <div>
-            <label htmlFor="body">
-              Full content (detail page — separate paragraphs with a blank line)
-            </label>
-            <textarea
-              id="body"
-              rows={10}
+            <label htmlFor="body">Full content (shown on the programme's detail page)</label>
+            <RichTextEditor
               value={editing.bodyDraft}
-              onChange={(e) => setEditing({ ...editing, bodyDraft: e.target.value })}
+              onChange={(html) => setEditing({ ...editing, bodyDraft: html })}
+              minHeight={260}
             />
           </div>
 

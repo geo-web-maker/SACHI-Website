@@ -3,7 +3,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: 'include', // sends/receives the httpOnly sachi_session cookie
-    headers: { 'Content-Type': 'application/json', 'X-Sachi-Csrf': '1', ...options.headers },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
 
@@ -11,12 +11,7 @@ async function request(path, options = {}) {
     let detail = `Request failed (${res.status})`;
     try {
       const body = await res.json();
-      if (typeof body.detail === 'string') {
-        detail = body.detail;
-      } else if (Array.isArray(body.detail)) {
-        // Pydantic validation errors: [{ loc, msg, type }, ...]
-        detail = body.detail.map((e) => e.msg).join('; ') || detail;
-      }
+      detail = body.detail || detail;
     } catch {
       // response wasn't JSON — keep the generic message
     }

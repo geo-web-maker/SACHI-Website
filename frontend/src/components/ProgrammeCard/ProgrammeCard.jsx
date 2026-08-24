@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Slideshow from '../Slideshow/Slideshow';
+import { sanitizeHtml } from '../../lib/sanitizeHtml';
 import styles from './ProgrammeCard.module.css';
 
 export default function ProgrammeCard({ slug, num, title, teaser, images, flip }) {
@@ -24,7 +25,7 @@ export default function ProgrammeCard({ slug, num, title, teaser, images, flip }
       <div className={styles.text}>
         <div className={styles.label}>Programme {num}</div>
         <h2 className={styles.title}>{title}</h2>
-        <p className={styles.teaser}>{teaser}</p>
+        <p className={styles.teaser} dangerouslySetInnerHTML={{ __html: sanitizeHtml(teaser) }} />
         <span className={styles.readMore}>
           Read more <span className={styles.arrow}>&rarr;</span>
         </span>

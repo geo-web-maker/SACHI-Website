@@ -15,11 +15,24 @@
   margin-bottom: 40px;
 }
 
-.p {
+.richBody {
   font-size: 15.5px;
   line-height: 1.8;
   color: #0e3b43cc;
+}
+
+.richBody p {
   margin-bottom: 18px;
+}
+
+.richBody ul,
+.richBody ol {
+  margin: 0 0 18px;
+  padding-left: 1.4em;
+}
+
+.richBody strong {
+  color: #0e3b43;
 }
 
 .eyebrowLabel {

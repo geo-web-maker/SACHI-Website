@@ -38,16 +38,11 @@ export function RoleProvider({ children }) {
   );
 
   const role = user
-    ? {
-        label: ROLE_LABELS[user.role],
-        description: ROLE_DESCRIPTIONS[user.role],
-        sections: user.sections,
-        mustChangePassword: Boolean(user.must_change_password),
-      }
+    ? { label: ROLE_LABELS[user.role], description: ROLE_DESCRIPTIONS[user.role], sections: user.sections }
     : null;
 
   return (
-    <RoleContext.Provider value={{ user, role, loading: user === undefined, login, signOut, hasAccess, refreshMe }}>
+    <RoleContext.Provider value={{ user, role, loading: user === undefined, login, signOut, hasAccess }}>
       {children}
     </RoleContext.Provider>
   );

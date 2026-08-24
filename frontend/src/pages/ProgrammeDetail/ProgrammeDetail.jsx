@@ -5,6 +5,7 @@ import SupportNote from '../../components/SupportNote/SupportNote';
 import CtaBand from '../../components/CtaBand/CtaBand';
 import Slideshow from '../../components/Slideshow/Slideshow';
 import { useFetch } from '../../hooks/useFetch';
+import { sanitizeHtml } from '../../lib/sanitizeHtml';
 import styles from './ProgrammeDetail.module.css';
 
 export default function ProgrammeDetail() {
@@ -33,9 +34,10 @@ export default function ProgrammeDetail() {
           <div className={styles.heroSlideshow}>
             <Slideshow images={programme.images} aspect="16 / 8" />
           </div>
-          {programme.body.map((para, i) => (
-            <p key={i} className={styles.p}>{para}</p>
-          ))}
+          <div
+            className={styles.richBody}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(programme.body) }}
+          />
         </div>
       </section>
 

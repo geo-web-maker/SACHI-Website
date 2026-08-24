@@ -1,0 +1,49 @@
+.section {
+  padding: 80px var(--gutter);
+}
+
+.sectionTight {
+  padding: 0 var(--gutter) 80px;
+}
+
+.narrow {
+  max-width: 760px;
+}
+
+.richBody {
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: #0e3b43cc;
+}
+
+.richBody p {
+  margin-bottom: 18px;
+}
+
+.richBody ul,
+.richBody ol {
+  margin: 0 0 18px;
+  padding-left: 1.4em;
+}
+
+.richBody strong {
+  color: #0e3b43;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btnGhost {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .02em;
+  color: var(--terra);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.btnGhost:hover {
+  border-bottom-color: var(--terra);
+}
