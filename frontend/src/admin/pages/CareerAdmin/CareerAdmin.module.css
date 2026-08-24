@@ -34,3 +34,13 @@
   height: 16px;
   accent-color: var(--a-sidebar);
 }
+
+.applicationsHeader {
+  margin-top: 40px;
+  margin-bottom: 16px;
+}
+
+.applicationsHeader h2 {
+  font-size: 17px;
+  margin: 0 0 4px;
+}

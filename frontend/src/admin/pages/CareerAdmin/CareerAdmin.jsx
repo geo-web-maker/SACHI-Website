@@ -18,8 +18,11 @@ export default function CareerAdmin() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const [applications, setApplications] = useState([]);
+
   useEffect(() => {
     api.get('/api/admin/jobs').then(setJobs);
+    api.get('/api/admin/jobs/applications').then(setApplications);
   }, []);
 
   async function toggleStatus(id) {
@@ -27,6 +30,13 @@ export default function CareerAdmin() {
     const nextStatus = job.status === 'Open' ? 'Closed' : 'Open';
     const updated = await api.patch(`/api/admin/jobs/${id}`, { status: nextStatus });
     setJobs((prev) => prev.map((j) => (j.id === id ? updated : j)));
+  }
+
+  async function toggleApplicationStatus(id) {
+    const application = applications.find((a) => a.id === id);
+    const nextStatus = application.status === 'New' ? 'Reviewed' : 'New';
+    const updated = await api.patch(`/api/admin/jobs/applications/${id}`, { status: nextStatus });
+    setApplications((prev) => prev.map((a) => (a.id === id ? updated : a)));
   }
 
   async function addJob() {
@@ -83,6 +93,40 @@ export default function CareerAdmin() {
               <button className="a-btn a-btn-sm" onClick={() => openEdit(j)}>Edit</button>{' '}
               <button className="a-btn a-btn-sm" onClick={() => toggleStatus(j.id)}>
                 {j.status === 'Open' ? 'Close role' : 'Reopen'}
+              </button>
+            </td>
+          </tr>
+        )}
+      />
+
+      <div className={styles.applicationsHeader}>
+        <h2>Applications</h2>
+        <p className={styles.hint}>Everyone who's applied through the public Career pages, newest first.</p>
+      </div>
+
+      <DataTable
+        columns={['Applicant', 'Applying for', 'Contact', 'Submitted', 'Status', '']}
+        rows={applications}
+        renderRow={(a) => (
+          <tr key={a.id}>
+            <td className={styles.titleCell}>{a.applicant_name}</td>
+            <td>{a.job_title}</td>
+            <td className="a-mono">
+              <a href={`mailto:${a.applicant_email}`}>{a.applicant_email}</a>
+              {a.phone && <><br />{a.phone}</>}
+            </td>
+            <td className="a-mono">{new Date(a.created_at).toLocaleDateString()}</td>
+            <td>
+              <span className={`a-badge ${a.status === 'New' ? 'a-badge-success' : 'a-badge-neutral'}`}>
+                {a.status}
+              </span>
+            </td>
+            <td>
+              <a className="a-btn a-btn-sm" href={a.resume_url} target="_blank" rel="noreferrer">
+                View CV
+              </a>{' '}
+              <button className="a-btn a-btn-sm" onClick={() => toggleApplicationStatus(a.id)}>
+                {a.status === 'New' ? 'Mark reviewed' : 'Mark new'}
               </button>
             </td>
           </tr>

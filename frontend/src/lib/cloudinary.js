@@ -24,3 +24,31 @@ export async function uploadToCloudinary(file) {
   const data = await res.json();
   return data.secure_url;
 }
+
+// Public — no admin session required, used by the job application form.
+// resource_type is 'raw' because resumes are PDFs/Word docs, not images.
+export async function uploadResumeToCloudinary(file) {
+  const { signature, timestamp, api_key, cloud_name, folder, allowed_formats } =
+    await api.post('/api/uploads/resume-signature', {});
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('api_key', api_key);
+  formData.append('timestamp', timestamp);
+  formData.append('signature', signature);
+  formData.append('folder', folder);
+  formData.append('allowed_formats', allowed_formats);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/raw/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Resume upload failed');
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
