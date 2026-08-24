@@ -28,6 +28,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(uploads.router)
+app.include_router(uploads.public_router)
 app.include_router(programmes.router)
 app.include_router(jobs.router)
 app.include_router(gallery.router)

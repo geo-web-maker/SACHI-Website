@@ -23,6 +23,7 @@ async def ensure_indexes() -> None:
     await db.admin_users.create_index("email", unique=True)
     await db.programmes.create_index("slug", unique=True)
     await db.jobs.create_index([("title", "text"), ("keywords", "text")])
+    await db.job_applications.create_index("created_at")
     await db.contact_submissions.create_index("created_at")
     await db.donations.create_index("created_at")
 

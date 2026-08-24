@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -6,6 +8,7 @@ from pymongo import ReturnDocument
 from app.core.database import get_database
 from app.deps import require_section
 from app.models.job import JOB_TYPES, JobCreate, JobOut, JobUpdate
+from app.models.job_application import JobApplicationCreate, JobApplicationOut, JobApplicationUpdate
 
 router = APIRouter(tags=["jobs"])
 
@@ -52,6 +55,59 @@ async def get_job(job_id: str, db: AsyncIOMotorDatabase = Depends(get_database))
 async def list_all_jobs(db: AsyncIOMotorDatabase = Depends(get_database)):
     docs = await db.jobs.find().to_list(length=None)
     return docs
+
+
+@router.post("/api/jobs/{job_id}/apply", response_model=JobApplicationOut, status_code=status.HTTP_201_CREATED)
+async def submit_application(
+    job_id: str, body: JobApplicationCreate, db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    if not ObjectId.is_valid(job_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job not found")
+    job = await db.jobs.find_one({"_id": ObjectId(job_id), "status": "Open"})
+    if job is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job not found")
+
+    doc = {
+        **body.model_dump(),
+        "job_id": job_id,
+        "job_title": job["title"],
+        "status": "New",
+        "created_at": datetime.now(timezone.utc),
+    }
+    result = await db.job_applications.insert_one(doc)
+    return await db.job_applications.find_one({"_id": result.inserted_id})
+
+
+@router.get(
+    "/api/admin/jobs/applications",
+    response_model=list[JobApplicationOut],
+    dependencies=[Depends(require_section("career"))],
+)
+async def list_applications(db: AsyncIOMotorDatabase = Depends(get_database)):
+    return await db.job_applications.find().sort("created_at", -1).to_list(length=None)
+
+
+@router.patch(
+    "/api/admin/jobs/applications/{application_id}",
+    response_model=JobApplicationOut,
+    dependencies=[Depends(require_section("career"))],
+)
+async def update_application(
+    application_id: str,
+    body: JobApplicationUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    if not ObjectId.is_valid(application_id):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid id")
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No fields to update")
+    doc = await db.job_applications.find_one_and_update(
+        {"_id": ObjectId(application_id)}, {"$set": changes}, return_document=ReturnDocument.AFTER
+    )
+    if doc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Application not found")
+    return doc
 
 
 @router.post(
