@@ -41,6 +41,15 @@
   outline: none;
 }
 
+.deleteBtn {
+  color: var(--a-warn-text);
+  border-color: var(--a-warn-text);
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: var(--a-warn-bg);
+}
+
 .sectionsCell {
   font-family: var(--a-font-mono);
   font-size: 12.5px;

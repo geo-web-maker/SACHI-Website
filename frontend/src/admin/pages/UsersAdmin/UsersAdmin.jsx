@@ -80,6 +80,19 @@ export default function UsersAdmin() {
     }
   }
 
+  async function deleteUser(u) {
+    if (!confirm(`Permanently delete ${u.name}? This can't be undone — consider Disable instead if you might want them back.`)) return;
+    setError('');
+    setBusyId(u.id);
+    try {
+      await api.delete(`/api/admin/users/${u.id}`);
+      setUsers((prev) => prev.filter((x) => x.id !== u.id));
+    } catch (e) {
+      setError(e.message);
+      setBusyId(null);
+    }
+  }
+
   return (
     <ProtectedSection section="users" title="Admin users">
       <div className={styles.toolbar}>
@@ -146,6 +159,14 @@ export default function UsersAdmin() {
                   title={isSelf ? "You can't disable your own account" : undefined}
                 >
                   {u.is_active ? 'Disable' : 'Enable'}
+                </button>
+                <button
+                  className={`a-btn a-btn-sm ${styles.deleteBtn}`}
+                  onClick={() => deleteUser(u)}
+                  disabled={disabled || isSelf}
+                  title={isSelf ? "You can't delete your own account" : undefined}
+                >
+                  Delete
                 </button>
               </td>
             </tr>
