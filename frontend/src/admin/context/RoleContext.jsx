@@ -42,7 +42,7 @@ export function RoleProvider({ children }) {
     : null;
 
   return (
-    <RoleContext.Provider value={{ user, role, loading: user === undefined, login, signOut, hasAccess }}>
+    <RoleContext.Provider value={{ user, role, loading: user === undefined, login, signOut, hasAccess, refreshMe }}>
       {children}
     </RoleContext.Provider>
   );

@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
 import Sidebar from '../Sidebar/Sidebar';
+import ChangePasswordGate from '../ChangePasswordGate/ChangePasswordGate';
 import '../../styles/admin-tokens.css';
 import { AdminUIContext } from '../../context/admin-ui-context-instance';
 import styles from './AdminLayout.module.css';
 
 export default function AdminLayout() {
-  const { role, loading } = useRole();
+  const { user, role, loading, refreshMe } = useRole();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -24,6 +25,10 @@ export default function AdminLayout() {
 
   if (!role) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  if (user?.must_change_password) {
+    return <ChangePasswordGate onDone={refreshMe} />;
   }
 
   return (
