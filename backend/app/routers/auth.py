@@ -16,6 +16,8 @@ async def login(body: LoginRequest, response: Response, db: AsyncIOMotorDatabase
     user = await db.admin_users.find_one({"email": body.email})
     if user is None or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password")
+    if not user.get("is_active", True):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This account has been disabled")
 
     token = create_access_token(subject=str(user["_id"]), role=user["role"])
     response.set_cookie(

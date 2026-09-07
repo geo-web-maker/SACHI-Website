@@ -23,6 +23,11 @@ async def get_current_user(
     user = await db.admin_users.find_one({"_id": ObjectId(payload["sub"])})
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Account no longer exists")
+    if not user.get("is_active", True):
+        # Checked on every request (not just at login) so disabling someone
+        # kills their existing session immediately, rather than waiting out
+        # the JWT's expiry.
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This account has been disabled")
 
     return user
 
