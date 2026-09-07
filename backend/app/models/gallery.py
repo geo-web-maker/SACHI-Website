@@ -6,7 +6,7 @@ from app.models.common import PyObjectId
 class GalleryPhotoOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(validation_alias="_id")
     caption: str
     image_url: str | None = None  # None until real upload/storage (R2, etc.) is wired up
 

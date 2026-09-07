@@ -16,7 +16,7 @@ class JobApplicationCreate(BaseModel):
 class JobApplicationOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(validation_alias="_id")
     job_id: str
     job_title: str  # denormalized at submission time, so admin list survives a role being edited/deleted later
     applicant_name: str

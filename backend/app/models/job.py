@@ -8,7 +8,7 @@ JOB_TYPES = ["Freelance", "Full Time", "Internship", "Part Time", "Temporary"]
 class JobOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(validation_alias="_id")
     title: str
     type: str
     location: str

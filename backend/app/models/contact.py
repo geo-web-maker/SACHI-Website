@@ -15,7 +15,7 @@ class ContactSubmissionCreate(BaseModel):
 class ContactSubmissionOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(validation_alias="_id")
     name: str
     email: EmailStr
     subject: str

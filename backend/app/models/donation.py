@@ -8,7 +8,7 @@ from app.models.common import PyObjectId
 class DonationOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(validation_alias="_id")
     donor: str
     amount: int  # UGX, smallest whole unit — no decimals in the mock data
     type: str  # "One-time" | "Monthly"
