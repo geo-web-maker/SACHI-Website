@@ -51,9 +51,20 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ChangePasswordRequest(BaseModel):
+    """Self-service change, used both for the forced first-login gate and any
+    later voluntary change. Requires the current password (not just a valid
+    session) so a hijacked/left-open session can't be used to lock the real
+    owner out."""
+
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+
 class MeOut(BaseModel):
     id: str
     name: str
     email: EmailStr
     role: str
     sections: list[str]
+    must_change_password: bool = False
