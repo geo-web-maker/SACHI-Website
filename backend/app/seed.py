@@ -88,7 +88,8 @@ async def main():
             {
                 "name": "SACHI Super Admin",
                 "email": "admin@sachiuganda.org",
-                "role": "super_admin",
+                "is_super_admin": True,
+                "permissions": {},  # unused for super_admins — they bypass all per-section checks
                 "password_hash": hash_password("change-me-immediately"),
             }
         )

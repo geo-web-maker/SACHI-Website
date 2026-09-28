@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from app.core.database import get_database
-from app.deps import require_section
+from app.deps import require_edit, require_view
 from app.models.job import JOB_TYPES, JobCreate, JobOut, JobUpdate
 from app.models.job_application import JobApplicationCreate, JobApplicationOut, JobApplicationUpdate
 
@@ -50,7 +50,7 @@ async def get_job(job_id: str, db: AsyncIOMotorDatabase = Depends(get_database))
 @router.get(
     "/api/admin/jobs",
     response_model=list[JobOut],
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_view("career"))],
 )
 async def list_all_jobs(db: AsyncIOMotorDatabase = Depends(get_database)):
     docs = await db.jobs.find().to_list(length=None)
@@ -81,7 +81,7 @@ async def submit_application(
 @router.get(
     "/api/admin/jobs/applications",
     response_model=list[JobApplicationOut],
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_view("career"))],
 )
 async def list_applications(db: AsyncIOMotorDatabase = Depends(get_database)):
     return await db.job_applications.find().sort("created_at", -1).to_list(length=None)
@@ -90,7 +90,7 @@ async def list_applications(db: AsyncIOMotorDatabase = Depends(get_database)):
 @router.patch(
     "/api/admin/jobs/applications/{application_id}",
     response_model=JobApplicationOut,
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_edit("career"))],
 )
 async def update_application(
     application_id: str,
@@ -114,7 +114,7 @@ async def update_application(
     "/api/admin/jobs",
     response_model=JobOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_edit("career"))],
 )
 async def create_job(body: JobCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
     doc = {**body.model_dump(), "status": "Open"}
@@ -125,7 +125,7 @@ async def create_job(body: JobCreate, db: AsyncIOMotorDatabase = Depends(get_dat
 @router.patch(
     "/api/admin/jobs/{job_id}",
     response_model=JobOut,
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_edit("career"))],
 )
 async def update_job(job_id: str, body: JobUpdate, db: AsyncIOMotorDatabase = Depends(get_database)):
     if not ObjectId.is_valid(job_id):
@@ -144,7 +144,7 @@ async def update_job(job_id: str, body: JobUpdate, db: AsyncIOMotorDatabase = De
 @router.delete(
     "/api/admin/jobs/{job_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_section("career"))],
+    dependencies=[Depends(require_edit("career"))],
 )
 async def delete_job(job_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     if not ObjectId.is_valid(job_id):

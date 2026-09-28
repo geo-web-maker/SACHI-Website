@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
 import { useAdminUI } from '../../hooks/useAdminUI';
-import { SECTION_META } from '../../data/roles';
+import { SECTION_META } from '../../data/sections';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
-  const { role } = useRole();
+  const { user, accountLabel, visibleSections } = useRole();
   const { sidebarOpen, closeSidebar } = useAdminUI();
-  if (!role) return null;
+  if (!user) return null;
 
   return (
     <>
@@ -19,7 +19,7 @@ export default function Sidebar() {
       </div>
 
       <nav className={styles.nav}>
-        {role.sections.map((key) => {
+        {visibleSections.map((key) => {
           const meta = SECTION_META[key];
           return (
             <NavLink
@@ -35,8 +35,8 @@ export default function Sidebar() {
       </nav>
 
       <div className={styles.roleBadge}>
-        <div className={styles.roleLabel}>{role.label}</div>
-        <div className={styles.roleDesc}>{role.description}</div>
+        <div className={styles.roleLabel}>{accountLabel}</div>
+        <div className={styles.roleDesc}>{user.name}</div>
       </div>
     </aside>
   </>

@@ -3,20 +3,28 @@ import ProtectedSection from '../../components/ProtectedSection/ProtectedSection
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
 import RichTextEditor from '../../../components/RichTextEditor/RichTextEditor';
+import AutosaveStatus from '../../components/AutosaveStatus/AutosaveStatus';
+import { useAutosave } from '../../hooks/useAutosave';
+import { useRole } from '../../hooks/useRole';
 import { api } from '../../../lib/api';
 import styles from './CareerAdmin.module.css';
 
 const jobTypes = ['Freelance', 'Full Time', 'Internship', 'Part Time', 'Temporary'];
 
 const emptyDraft = { title: '', type: jobTypes[0], location: '', remote: false, description: '' };
+const addDraftKey = 'sachi-draft:job:new';
 
 export default function CareerAdmin() {
+  const { hasAccess } = useRole();
+  const canEdit = hasAccess('career', 'edit');
+
   const [jobs, setJobs] = useState([]);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
 
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [restorePrompted, setRestorePrompted] = useState(false);
 
   const [applications, setApplications] = useState([]);
 
@@ -45,34 +53,108 @@ export default function CareerAdmin() {
     setJobs((prev) => [...prev, created]);
     setDraft(emptyDraft);
     setAdding(false);
+    try {
+      localStorage.removeItem(addDraftKey);
+    } catch {
+      /* ignore */
+    }
   }
 
   function openEdit(job) {
     setEditing({ ...job });
+    setRestorePrompted(false);
   }
+
+  // Autosave for the edit modal, same fields the manual "Save changes" already
+  // sends — just firing on pause/word-count/interval instead of only on click.
+  const editKey = editing ? `sachi-draft:job:${editing.id}` : null;
+  const autosave = useAutosave({
+    key: editKey,
+    data: editing,
+    enabled: Boolean(editing) && canEdit,
+    getWordCountable: (d) => `${d?.title || ''} ${d?.location || ''} ${d?.description || ''}`,
+    onSave: async (d) => {
+      const updated = await api.patch(`/api/admin/jobs/${d.id}`, {
+        title: d.title,
+        type: d.type,
+        location: d.location,
+        remote: d.remote,
+        description: d.description,
+      });
+      setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+    },
+  });
+
+  useEffect(() => {
+    if (!editing || restorePrompted || !canEdit) return;
+    setRestorePrompted(true);
+    const draft = autosave.restoreLocalDraft();
+    if (draft?.data && draft.data.id === editing.id) {
+      const draftText = `${draft.data.title || ''}${draft.data.description || ''}`;
+      const currentText = `${editing.title || ''}${editing.description || ''}`;
+      if (draftText !== currentText) {
+        const when = new Date(draft.savedAt).toLocaleTimeString();
+        if (confirm(`Found unsaved changes from ${when} for this role that never made it to the server. Restore them?`)) {
+          setEditing(draft.data);
+        } else {
+          autosave.discardLocalDraft();
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
 
   async function saveEdit() {
     setSaving(true);
     try {
-      const updated = await api.patch(`/api/admin/jobs/${editing.id}`, {
-        title: editing.title,
-        type: editing.type,
-        location: editing.location,
-        remote: editing.remote,
-        description: editing.description,
-      });
-      setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+      await autosave.flush();
       setEditing(null);
     } finally {
       setSaving(false);
     }
   }
 
+  // No server id exists yet for a role that hasn't been created, so the "add"
+  // form only gets a local backup (written on every change) rather than a
+  // periodic server autosave — that still covers a crash/power-loss before
+  // "Add role" is clicked.
+  useEffect(() => {
+    if (!adding) return;
+    try {
+      localStorage.setItem(addDraftKey, JSON.stringify({ data: draft, savedAt: Date.now() }));
+    } catch {
+      /* ignore */
+    }
+  }, [draft, adding]);
+
+  useEffect(() => {
+    if (!adding) return;
+    try {
+      const raw = localStorage.getItem(addDraftKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.data?.title?.trim() && confirm('Restore the unfinished new role you were drafting earlier?')) {
+        setDraft(saved.data);
+      } else {
+        localStorage.removeItem(addDraftKey);
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adding]);
+
   return (
     <ProtectedSection section="career" title="Career">
       <div className={styles.toolbar}>
-        <p className={styles.hint}>Manage the roles shown on the public Career page.</p>
-        <button className="a-btn a-btn-primary" onClick={() => setAdding(true)}>+ Add role</button>
+        <p className={styles.hint}>
+          {canEdit
+            ? 'Manage the roles shown on the public Career page. Changes autosave as you type.'
+            : 'You have view-only access to this section.'}
+        </p>
+        {canEdit && (
+          <button className="a-btn a-btn-primary" onClick={() => setAdding(true)}>+ Add role</button>
+        )}
       </div>
 
       <DataTable
@@ -90,10 +172,12 @@ export default function CareerAdmin() {
               </span>
             </td>
             <td>
-              <button className="a-btn a-btn-sm" onClick={() => openEdit(j)}>Edit</button>{' '}
-              <button className="a-btn a-btn-sm" onClick={() => toggleStatus(j.id)}>
-                {j.status === 'Open' ? 'Close role' : 'Reopen'}
-              </button>
+              <button className="a-btn a-btn-sm" onClick={() => openEdit(j)}>{canEdit ? 'Edit' : 'View'}</button>{' '}
+              {canEdit && (
+                <button className="a-btn a-btn-sm" onClick={() => toggleStatus(j.id)}>
+                  {j.status === 'Open' ? 'Close role' : 'Reopen'}
+                </button>
+              )}
             </td>
           </tr>
         )}
@@ -125,9 +209,11 @@ export default function CareerAdmin() {
               <a className="a-btn a-btn-sm" href={a.resume_url} target="_blank" rel="noreferrer">
                 View CV
               </a>{' '}
-              <button className="a-btn a-btn-sm" onClick={() => toggleApplicationStatus(a.id)}>
-                {a.status === 'New' ? 'Mark reviewed' : 'Mark new'}
-              </button>
+              {canEdit && (
+                <button className="a-btn a-btn-sm" onClick={() => toggleApplicationStatus(a.id)}>
+                  {a.status === 'New' ? 'Mark reviewed' : 'Mark new'}
+                </button>
+              )}
             </td>
           </tr>
         )}
@@ -179,20 +265,27 @@ export default function CareerAdmin() {
               minHeight={180}
             />
           </div>
+          <p className={styles.hint}>
+            A local backup of this form is kept on this device as you type, in case of a crash
+            or power loss before you hit "Add role".
+          </p>
         </Modal>
       )}
 
       {editing && (
         <Modal
-          title={`Edit — ${editing.title}`}
+          title={`${canEdit ? 'Edit' : 'View'} — ${editing.title}`}
           onClose={() => setEditing(null)}
           wide
           footer={
             <>
-              <button className="a-btn" onClick={() => setEditing(null)}>Cancel</button>
-              <button className="a-btn a-btn-primary" onClick={saveEdit} disabled={saving}>
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
+              <AutosaveStatus status={canEdit ? autosave.status : null} lastSavedAt={autosave.lastSavedAt} />
+              <button className="a-btn" onClick={() => setEditing(null)}>{canEdit ? 'Cancel' : 'Close'}</button>
+              {canEdit && (
+                <button className="a-btn a-btn-primary" onClick={saveEdit} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+              )}
             </>
           }
         >
@@ -202,6 +295,7 @@ export default function CareerAdmin() {
               id="edit-title"
               value={editing.title}
               onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
           <div>
@@ -210,6 +304,7 @@ export default function CareerAdmin() {
               id="edit-type"
               value={editing.type}
               onChange={(e) => setEditing({ ...editing, type: e.target.value })}
+              disabled={!canEdit}
             >
               {jobTypes.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -220,6 +315,7 @@ export default function CareerAdmin() {
               id="edit-location"
               value={editing.location}
               onChange={(e) => setEditing({ ...editing, location: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
           <div className={styles.checkRow}>
@@ -228,6 +324,7 @@ export default function CareerAdmin() {
                 type="checkbox"
                 checked={editing.remote}
                 onChange={(e) => setEditing({ ...editing, remote: e.target.checked })}
+                disabled={!canEdit}
               />
               Remote OK
             </label>
@@ -238,7 +335,7 @@ export default function CareerAdmin() {
             </label>
             <RichTextEditor
               value={editing.description}
-              onChange={(html) => setEditing({ ...editing, description: html })}
+              onChange={(html) => canEdit && setEditing({ ...editing, description: html })}
               minHeight={180}
             />
           </div>

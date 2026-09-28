@@ -4,7 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from app.core.database import get_database
-from app.deps import require_section
+from app.deps import require_edit
 from app.models.gallery import GalleryPhotoCreate, GalleryPhotoOut, GalleryPhotoUpdate
 
 router = APIRouter(tags=["gallery"])
@@ -19,7 +19,7 @@ async def list_photos(db: AsyncIOMotorDatabase = Depends(get_database)):
     "/api/admin/gallery",
     response_model=GalleryPhotoOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_section("gallery"))],
+    dependencies=[Depends(require_edit("gallery"))],
 )
 async def add_photo(body: GalleryPhotoCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
     result = await db.gallery_photos.insert_one(body.model_dump())
@@ -29,7 +29,7 @@ async def add_photo(body: GalleryPhotoCreate, db: AsyncIOMotorDatabase = Depends
 @router.patch(
     "/api/admin/gallery/{photo_id}",
     response_model=GalleryPhotoOut,
-    dependencies=[Depends(require_section("gallery"))],
+    dependencies=[Depends(require_edit("gallery"))],
 )
 async def update_photo(
     photo_id: str, body: GalleryPhotoUpdate, db: AsyncIOMotorDatabase = Depends(get_database)
@@ -50,7 +50,7 @@ async def update_photo(
 @router.delete(
     "/api/admin/gallery/{photo_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_section("gallery"))],
+    dependencies=[Depends(require_edit("gallery"))],
 )
 async def remove_photo(photo_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     if not ObjectId.is_valid(photo_id):

@@ -33,9 +33,9 @@ export default function Dashboard() {
       <div className={styles.welcome}>
         <h2>Welcome back.</h2>
         <p>
-          Use the sidebar to jump into the sections your role has access to. The cards above
-          only show up if the server actually returned that stat for your role — same rule the
-          sidebar links follow.
+          Use the sidebar to jump into the sections you have access to. The cards above only
+          show up if the server actually returned that stat for you — same rule the sidebar
+          links follow.
         </p>
       </div>
     </ProtectedSection>

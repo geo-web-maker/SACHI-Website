@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { RoleContext } from './role-context-instance';
-import { ROLE_LABELS, ROLE_DESCRIPTIONS } from '../data/roles';
+import { ASSIGNABLE_SECTIONS } from '../data/sections';
 import { api } from '../../lib/api';
 
 export function RoleProvider({ children }) {
-  // `user` is whatever GET /api/auth/me returns: { id, name, email, role, sections }.
+  // `user` is whatever GET /api/auth/me returns:
+  // { id, name, email, is_super_admin, permissions: { [section]: { view, edit } } }.
   // `null` means signed out, `undefined` means "still checking" on first load.
   const [user, setUser] = useState(undefined);
 
@@ -32,17 +33,44 @@ export function RoleProvider({ children }) {
     setUser(null);
   }, []);
 
+  // level: 'view' (default) or 'edit'. super_admins pass everything; everyone
+  // else needs an explicit per-section grant.
   const hasAccess = useCallback(
-    (section) => Boolean(user && user.sections?.includes(section)),
+    (section, level = 'view') => {
+      if (!user) return false;
+      if (section === 'dashboard') return true;
+      if (section === 'users') return Boolean(user.is_super_admin);
+      if (user.is_super_admin) return true;
+      return Boolean(user.permissions?.[section]?.[level]);
+    },
     [user],
   );
 
-  const role = user
-    ? { label: ROLE_LABELS[user.role], description: ROLE_DESCRIPTIONS[user.role], sections: user.sections }
-    : null;
+  // Sections to show in the sidebar: dashboard always, users only for super
+  // admins, everything else only where the user has at least view access.
+  const visibleSections = user
+    ? [
+        'dashboard',
+        ...ASSIGNABLE_SECTIONS.filter((s) => hasAccess(s, 'view')),
+        ...(user.is_super_admin ? ['users'] : []),
+      ]
+    : [];
+
+  const accountLabel = user ? (user.is_super_admin ? 'Super Admin' : 'Admin') : null;
 
   return (
-    <RoleContext.Provider value={{ user, role, loading: user === undefined, login, signOut, hasAccess, refreshMe }}>
+    <RoleContext.Provider
+      value={{
+        user,
+        accountLabel,
+        loading: user === undefined,
+        login,
+        signOut,
+        hasAccess,
+        visibleSections,
+        refreshMe,
+      }}
+    >
       {children}
     </RoleContext.Provider>
   );

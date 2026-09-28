@@ -16,9 +16,13 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(*, subject: str, role: str) -> str:
+def create_access_token(*, subject: str) -> str:
+    # Deliberately carries only `sub` — access is scope-based and looked up fresh
+    # from the user's stored permissions on every request (see deps.get_current_user),
+    # so nothing authorization-relevant is cached in the token itself. That also means
+    # a permissions change takes effect on the user's very next request, not next login.
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-    payload = {"sub": subject, "role": role, "exp": expire}
+    payload = {"sub": subject, "exp": expire}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 

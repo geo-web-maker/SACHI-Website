@@ -2,16 +2,40 @@ import { useEffect, useState } from 'react';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
-import { ROLE_LABELS } from '../../data/roles';
+import PermissionMatrix from '../../components/PermissionMatrix/PermissionMatrix';
+import { ASSIGNABLE_SECTIONS, SECTION_META } from '../../data/sections';
 import { api } from '../../../lib/api';
 import { useRole } from '../../hooks/useRole';
 import styles from './UsersAdmin.module.css';
+
+const emptyPermissions = {};
+
+const emptyDraft = {
+  name: '',
+  email: '',
+  phone: '',
+  is_super_admin: false,
+  permissions: emptyPermissions,
+};
+
+function accessSummary(u) {
+  if (u.is_super_admin) return 'Super admin — full access';
+  const granted = ASSIGNABLE_SECTIONS.filter((s) => u.permissions?.[s]?.view);
+  if (granted.length === 0) return 'No access yet';
+  return granted
+    .map((s) => `${SECTION_META[s].label}${u.permissions[s].edit ? '' : ' (view only)'}`)
+    .join(', ');
+}
 
 export default function UsersAdmin() {
   const { user: me } = useRole();
   const [users, setUsers] = useState([]);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ name: '', email: '', phone: '', role: 'content_manager' });
+  const [draft, setDraft] = useState(emptyDraft);
+
+  const [editingAccess, setEditingAccess] = useState(null); // { id, name, is_super_admin, permissions } | null
+  const [savingAccess, setSavingAccess] = useState(false);
+
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
   const [delivery, setDelivery] = useState(null); // { name, sms_sent, temp_password } | null
@@ -20,9 +44,30 @@ export default function UsersAdmin() {
     api.get('/api/admin/users').then(setUsers);
   }, []);
 
-  async function changeRole(id, role) {
-    const updated = await api.patch(`/api/admin/users/${id}`, { role });
-    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+  function openEditAccess(u) {
+    setEditingAccess({
+      id: u.id,
+      name: u.name,
+      is_super_admin: u.is_super_admin,
+      permissions: JSON.parse(JSON.stringify(u.permissions || {})),
+    });
+  }
+
+  async function saveAccess() {
+    setSavingAccess(true);
+    setError('');
+    try {
+      const updated = await api.patch(`/api/admin/users/${editingAccess.id}`, {
+        is_super_admin: editingAccess.is_super_admin,
+        permissions: editingAccess.is_super_admin ? {} : editingAccess.permissions,
+      });
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      setEditingAccess(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSavingAccess(false);
+    }
   }
 
   async function savePhone(u, phone) {
@@ -43,7 +88,7 @@ export default function UsersAdmin() {
     try {
       const { sms_sent, temp_password, ...created } = await api.post('/api/admin/users', draft);
       setUsers((prev) => [...prev, created]);
-      setDraft({ name: '', email: '', phone: '', role: 'content_manager' });
+      setDraft(emptyDraft);
       setAdding(false);
       setDelivery({ name: created.name, sms_sent, temp_password });
     } catch (e) {
@@ -97,9 +142,8 @@ export default function UsersAdmin() {
     <ProtectedSection section="users" title="Admin users">
       <div className={styles.toolbar}>
         <p className={styles.hint}>
-          Assign each admin a role — the sidebar and page access they get is enforced by the
-          server based on this, on every request. This page itself is only reachable by
-          super_admins.
+          Grant each admin view and/or edit access per page — enforced by the server on every
+          request. This page itself is only reachable by super admins.
         </p>
         <button className="a-btn a-btn-primary" onClick={() => setAdding(true)}>+ Add admin</button>
       </div>
@@ -107,7 +151,7 @@ export default function UsersAdmin() {
       {error && <p className={styles.error}>{error}</p>}
 
       <DataTable
-        columns={['Name', 'Email', 'Phone', 'Role', 'Status', '']}
+        columns={['Name', 'Email', 'Phone', 'Access', 'Status', '']}
         rows={users}
         renderRow={(u) => {
           const isSelf = u.id === me?.id;
@@ -127,24 +171,16 @@ export default function UsersAdmin() {
                   disabled={disabled}
                 />
               </td>
-              <td>
-                <select
-                  className={styles.roleSelect}
-                  value={u.role}
-                  onChange={(e) => changeRole(u.id, e.target.value)}
-                  disabled={disabled}
-                >
-                  {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </td>
+              <td className={styles.accessCell}>{accessSummary(u)}</td>
               <td>
                 <span className={`a-badge ${u.is_active ? 'a-badge-success' : 'a-badge-warn'}`}>
                   {u.is_active ? 'Active' : 'Disabled'}
                 </span>
               </td>
               <td className={styles.actionsCell}>
+                <button className="a-btn a-btn-sm" onClick={() => openEditAccess(u)} disabled={disabled}>
+                  Edit access
+                </button>
                 <button
                   className="a-btn a-btn-sm"
                   onClick={() => resetPassword(u)}
@@ -178,6 +214,7 @@ export default function UsersAdmin() {
         <Modal
           title="Add a new admin"
           onClose={() => setAdding(false)}
+          wide
           footer={
             <>
               <button className="a-btn" onClick={() => setAdding(false)}>Cancel</button>
@@ -205,13 +242,37 @@ export default function UsersAdmin() {
             <p className={styles.hint}>Their first temporary password is generated and sent here by SMS.</p>
           </div>
           <div>
-            <label htmlFor="user-role">Role</label>
-            <select id="user-role" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })}>
-              {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
+            <label>Access</label>
+            <PermissionMatrix
+              isSuperAdmin={draft.is_super_admin}
+              permissions={draft.permissions}
+              onChangeSuperAdmin={(checked) => setDraft({ ...draft, is_super_admin: checked })}
+              onChangePermissions={(permissions) => setDraft({ ...draft, permissions })}
+            />
           </div>
+        </Modal>
+      )}
+
+      {editingAccess && (
+        <Modal
+          title={`Edit access — ${editingAccess.name}`}
+          onClose={() => setEditingAccess(null)}
+          wide
+          footer={
+            <>
+              <button className="a-btn" onClick={() => setEditingAccess(null)}>Cancel</button>
+              <button className="a-btn a-btn-primary" onClick={saveAccess} disabled={savingAccess}>
+                {savingAccess ? 'Saving…' : 'Save access'}
+              </button>
+            </>
+          }
+        >
+          <PermissionMatrix
+            isSuperAdmin={editingAccess.is_super_admin}
+            permissions={editingAccess.permissions}
+            onChangeSuperAdmin={(checked) => setEditingAccess({ ...editingAccess, is_super_admin: checked })}
+            onChangePermissions={(permissions) => setEditingAccess({ ...editingAccess, permissions })}
+          />
         </Modal>
       )}
 

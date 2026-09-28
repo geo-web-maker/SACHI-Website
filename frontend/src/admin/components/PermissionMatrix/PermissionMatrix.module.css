@@ -1,0 +1,43 @@
+.wrap {
+  margin-top: 6px;
+}
+
+.superAdminRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--a-panel-alt, #f6f7f9);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.superAdminRow input {
+  margin-top: 3px;
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.grid th,
+.grid td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--a-border, #e5e7eb);
+}
+
+.grid th:not(:first-child),
+.grid td:not(:first-child) {
+  text-align: center;
+  width: 70px;
+}
+
+.rowDisabled {
+  opacity: 0.45;
+}

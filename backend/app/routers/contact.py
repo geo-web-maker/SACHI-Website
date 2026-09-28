@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from app.core.database import get_database
-from app.deps import require_section
+from app.deps import require_edit, require_view
 from app.models.contact import ContactSubmissionCreate, ContactSubmissionOut, ContactSubmissionUpdate
 
 router = APIRouter(tags=["contact"])
@@ -24,7 +24,7 @@ async def submit_contact_form(
 @router.get(
     "/api/admin/contact",
     response_model=list[ContactSubmissionOut],
-    dependencies=[Depends(require_section("contact"))],
+    dependencies=[Depends(require_view("contact"))],
 )
 async def list_submissions(db: AsyncIOMotorDatabase = Depends(get_database)):
     return await db.contact_submissions.find().sort("created_at", -1).to_list(length=None)
@@ -33,7 +33,7 @@ async def list_submissions(db: AsyncIOMotorDatabase = Depends(get_database)):
 @router.patch(
     "/api/admin/contact/{submission_id}",
     response_model=ContactSubmissionOut,
-    dependencies=[Depends(require_section("contact"))],
+    dependencies=[Depends(require_edit("contact"))],
 )
 async def update_submission(
     submission_id: str,

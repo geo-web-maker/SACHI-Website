@@ -15,11 +15,26 @@ from app.models.admin_user import (
     AdminUserUpdate,
     TempPasswordDelivery,
 )
-from app.models.common import ROLES
+from app.models.common import ASSIGNABLE_SECTIONS
 
 router = APIRouter(
     prefix="/api/admin/users", tags=["admin-users"], dependencies=[Depends(require_super_admin)]
 )
+
+
+def _validate_and_normalize_permissions(permissions: dict) -> dict:
+    """Reject grants for unknown sections, and force edit -> view (an edit grant
+    with view unset would be confusing to enforce and to display)."""
+    unknown = set(permissions) - set(ASSIGNABLE_SECTIONS)
+    if unknown:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Unknown section(s): {', '.join(sorted(unknown))}")
+    normalized = {}
+    for section, perm in permissions.items():
+        perm = perm.model_dump() if hasattr(perm, "model_dump") else dict(perm)
+        if perm.get("edit"):
+            perm["view"] = True
+        normalized[section] = perm
+    return normalized
 
 
 @router.get("", response_model=list[AdminUserOut])
@@ -29,15 +44,15 @@ async def list_users(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 @router.post("", response_model=AdminUserCreateOut, status_code=status.HTTP_201_CREATED)
 async def create_user(body: AdminUserCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
-    if body.role not in ROLES:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Unknown role '{body.role}'")
+    permissions = _validate_and_normalize_permissions(body.permissions)
 
     temp_password = generate_temp_password()
     doc = {
         "name": body.name,
         "email": body.email,
         "phone": body.phone,
-        "role": body.role,
+        "is_super_admin": body.is_super_admin,
+        "permissions": permissions,
         "password_hash": hash_password(temp_password),
         "must_change_password": True,
     }
@@ -59,12 +74,20 @@ async def create_user(body: AdminUserCreate, db: AsyncIOMotorDatabase = Depends(
 async def update_user(user_id: str, body: AdminUserUpdate, db: AsyncIOMotorDatabase = Depends(get_database)):
     if not ObjectId.is_valid(user_id):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid user id")
-    if body.role is not None and body.role not in ROLES:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Unknown role '{body.role}'")
 
     changes = body.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No fields to update")
+
+    if "permissions" in changes and changes["permissions"] is not None:
+        changes["permissions"] = _validate_and_normalize_permissions(changes["permissions"])
+
+    if changes.get("is_super_admin") is False:
+        target = await db.admin_users.find_one({"_id": ObjectId(user_id)})
+        if target is not None and target.get("is_super_admin") and await _is_last_active_super_admin(
+            db, ObjectId(user_id)
+        ):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Can't remove super admin from the last active super admin")
 
     doc = await db.admin_users.find_one_and_update(
         {"_id": ObjectId(user_id)}, {"$set": changes}, return_document=ReturnDocument.AFTER
@@ -80,7 +103,7 @@ async def _is_last_active_super_admin(db: AsyncIOMotorDatabase, user_id: ObjectI
     remaining = await db.admin_users.count_documents(
         {
             "_id": {"$ne": user_id},
-            "role": "super_admin",
+            "is_super_admin": True,
             "is_active": {"$ne": False},
         }
     )
@@ -130,7 +153,7 @@ async def disable_user(
     target = await db.admin_users.find_one({"_id": ObjectId(user_id)})
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
-    if target["role"] == "super_admin" and await _is_last_active_super_admin(db, ObjectId(user_id)):
+    if target.get("is_super_admin") and await _is_last_active_super_admin(db, ObjectId(user_id)):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Can't disable the last active super admin")
 
     doc = await db.admin_users.find_one_and_update(
@@ -165,7 +188,7 @@ async def delete_user(
     target = await db.admin_users.find_one({"_id": ObjectId(user_id)})
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
-    if target["role"] == "super_admin" and await _is_last_active_super_admin(db, ObjectId(user_id)):
+    if target.get("is_super_admin") and await _is_last_active_super_admin(db, ObjectId(user_id)):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Can't delete the last active super admin")
 
     await db.admin_users.delete_one({"_id": ObjectId(user_id)})

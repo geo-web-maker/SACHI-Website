@@ -37,7 +37,7 @@ export default function Login() {
         <h1>Sign in</h1>
         <p className={styles.lede}>
           Sign in with your admin account. What you can see and edit here is enforced by the
-          server based on your role — not by anything in this page.
+          server based on your account's access — not by anything in this page.
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>

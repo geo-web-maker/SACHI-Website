@@ -5,7 +5,7 @@ import { Menu } from 'lucide-react';
 import styles from './Topbar.module.css';
 
 export default function Topbar({ title }) {
-  const { role, signOut } = useRole();
+  const { user, accountLabel, signOut } = useRole();
   const { toggleSidebar } = useAdminUI();
   const navigate = useNavigate();
 
@@ -24,7 +24,7 @@ export default function Topbar({ title }) {
       </div>
       <div className={styles.right}>
         <div className={styles.viewingAs}>
-          Signed in as <strong>{role?.label}</strong>
+          Signed in as <strong>{user?.name}</strong>{accountLabel === 'Super Admin' ? ' (Super Admin)' : ''}
         </div>
         <button className={styles.switchBtn} onClick={handleSwitch}>Sign out</button>
       </div>

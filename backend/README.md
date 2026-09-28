@@ -5,13 +5,13 @@
 ```
 app/
   main.py            FastAPI app, CORS, router registration
-  deps.py            get_current_user / require_section — server-side role checks
+  deps.py            get_current_user / require_view / require_edit — server-side access checks
   core/
     config.py        Settings (env vars)
     database.py      Motor client + index setup
     security.py      password hashing + JWT
   models/
-    common.py        PyObjectId + the ROLES map (mirrors src/admin/data/roles.js)
+    common.py        PyObjectId + ASSIGNABLE_SECTIONS + user_has_access() (mirrors src/admin/data/sections.js)
     programme.py / job.py / gallery.py / contact.py / donation.py / admin_user.py
   routers/
     auth.py           /api/auth/login /logout /me
@@ -32,8 +32,14 @@ cd sachi-backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # then edit MONGO_URI / JWT_SECRET
-python -m app.seed          # creates super_admin + migrates mock data once
+python -m app.seed          # creates the first super_admin + migrates mock data once
 uvicorn app.main:app --reload --port 8000
+```
+
+If you're upgrading from the old role-based version, also run the one-off
+migration once against your live database (back it up first):
+```
+python -m scripts.migrate_role_to_permissions
 ```
 
 Docs at http://localhost:8000/docs once running.
@@ -43,12 +49,14 @@ Docs at http://localhost:8000/docs once running.
 - `POST /api/auth/login` checks the password against the bcrypt hash stored on
   the `admin_users` doc, then sets a JWT in an **httpOnly cookie** (`sachi_session`).
   No JS on the frontend ever touches the token directly — same pattern as Almanac.
-- Every admin route depends on `require_section("<section>")`, which decodes the
-  cookie, loads the user, and checks their role against the `ROLES` map in
-  `app/models/common.py`. That map is a hand-kept mirror of the frontend's
-  `src/admin/data/roles.js` — if you add a role/section there, add it here too.
-- `require_super_admin` is used on `/api/admin/users` since only super_admin
-  should manage other admins.
+- Every admin route depends on `require_view("<section>")` or `require_edit("<section>")`,
+  which decodes the cookie, loads the user, and checks either `is_super_admin` or their
+  own `permissions[section].view` / `.edit` grant (`app/models/common.py`). Access is
+  scope-based and per-user — set individually by a super_admin via `/api/admin/users`,
+  not derived from a fixed role. `ASSIGNABLE_SECTIONS` is a hand-kept mirror of the
+  frontend's `src/admin/data/sections.js` — if you add a section there, add it here too.
+- `require_super_admin` is used on `/api/admin/users` since only a super_admin
+  should manage other admins' access.
 
 ## Notes / things intentionally left as stubs
 

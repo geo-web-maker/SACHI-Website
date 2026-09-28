@@ -3,9 +3,13 @@ import ProtectedSection from '../../components/ProtectedSection/ProtectedSection
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
 import { api } from '../../../lib/api';
+import { useRole } from '../../hooks/useRole';
 import styles from './ContactAdmin.module.css';
 
 export default function ContactAdmin() {
+  const { hasAccess } = useRole();
+  const canEdit = hasAccess('contact', 'edit');
+
   const [messages, setMessages] = useState([]);
   const [viewing, setViewing] = useState(null);
 
@@ -15,7 +19,9 @@ export default function ContactAdmin() {
 
   async function openMessage(msg) {
     setViewing(msg);
-    if (msg.status === 'New') {
+    // Marking as read is a write — skip it for view-only admins (the API
+    // would reject it anyway); their view just always shows the true status.
+    if (msg.status === 'New' && canEdit) {
       const updated = await api.patch(`/api/admin/contact/${msg.id}`, { status: 'Read' });
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? updated : m)));
       setViewing(updated);

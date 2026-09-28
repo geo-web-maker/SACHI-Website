@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.database import get_database
-from app.deps import require_section
+from app.deps import require_edit, require_view
 from app.models.donation import DonationCreate, DonationOut
 
 router = APIRouter(tags=["donations"])
@@ -22,7 +22,7 @@ async def record_donation(body: DonationCreate, db: AsyncIOMotorDatabase = Depen
 @router.get(
     "/api/admin/donations",
     response_model=list[DonationOut],
-    dependencies=[Depends(require_section("donations"))],
+    dependencies=[Depends(require_view("donations"))],
 )
 async def list_donations(db: AsyncIOMotorDatabase = Depends(get_database)):
     return await db.donations.find().sort("created_at", -1).to_list(length=None)
@@ -30,7 +30,7 @@ async def list_donations(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 @router.get(
     "/api/admin/donations/stats",
-    dependencies=[Depends(require_section("donations"))],
+    dependencies=[Depends(require_view("donations"))],
 )
 async def donation_stats(db: AsyncIOMotorDatabase = Depends(get_database)):
     donations = await db.donations.find().to_list(length=None)

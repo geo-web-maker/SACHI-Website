@@ -4,6 +4,9 @@ import ProtectedSection from '../../components/ProtectedSection/ProtectedSection
 import DataTable from '../../components/DataTable/DataTable';
 import Modal from '../../components/Modal/Modal';
 import RichTextEditor from '../../../components/RichTextEditor/RichTextEditor';
+import AutosaveStatus from '../../components/AutosaveStatus/AutosaveStatus';
+import { useAutosave } from '../../hooks/useAutosave';
+import { useRole } from '../../hooks/useRole';
 import { api } from '../../../lib/api';
 import { PROGRAMME_ICONS, PROGRAMME_ICON_NAMES } from '../../../data/programmeIcons';
 import styles from './ProgrammesAdmin.module.css';
@@ -39,10 +42,14 @@ function slugify(title) {
 }
 
 export default function ProgrammesAdmin() {
+  const { hasAccess } = useRole();
+  const canEdit = hasAccess('programmes', 'edit');
+
   const [programmes, setProgrammes] = useState([]);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImgId, setUploadingImgId] = useState(null);
+  const [restorePrompted, setRestorePrompted] = useState(false);
 
   const [creating, setCreating] = useState(false);
   const [createDraft, setCreateDraft] = useState(emptyDraft);
@@ -55,7 +62,50 @@ export default function ProgrammesAdmin() {
 
   function openEdit(p) {
     setEditing(toDraft(p));
+    setRestorePrompted(false);
   }
+
+  // Autosave for the edit modal — patches the same fields the manual "Save
+  // changes" button already sends, so it's just the same PATCH firing more
+  // often (per keystroke pause/word-count/interval) instead of only on click.
+  const editKey = editing ? `sachi-draft:programme:${editing.slug}` : null;
+  const autosave = useAutosave({
+    key: editKey,
+    data: editing,
+    enabled: Boolean(editing) && canEdit,
+    getWordCountable: (d) => `${d?.teaserDraft || ''} ${d?.bodyDraft || ''}`,
+    onSave: async (d) => {
+      const updated = await api.patch(`/api/admin/programmes/${d.slug}`, {
+        icon: d.icon,
+        teaser: d.teaserDraft,
+        body: d.bodyDraft,
+        images: d.imagesDraft,
+      });
+      setProgrammes((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+    },
+  });
+
+  // If a local draft exists from a session that never got to save (e.g. the
+  // power cut before the autosave could reach the server), offer to restore it
+  // as soon as the edit modal opens for that programme.
+  useEffect(() => {
+    if (!editing || restorePrompted || !canEdit) return;
+    setRestorePrompted(true);
+    const draft = autosave.restoreLocalDraft();
+    if (draft?.data && draft.data.slug === editing.slug) {
+      const draftText = `${draft.data.teaserDraft || ''}${draft.data.bodyDraft || ''}`;
+      const currentText = `${editing.teaserDraft || ''}${editing.bodyDraft || ''}`;
+      if (draftText !== currentText) {
+        const when = new Date(draft.savedAt).toLocaleTimeString();
+        if (confirm(`Found unsaved changes from ${when} for this programme that never made it to the server. Restore them?`)) {
+          setEditing(draft.data);
+        } else {
+          autosave.discardLocalDraft();
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
 
   function updateImageCaption(id, caption) {
     setEditing((prev) => ({
@@ -108,13 +158,7 @@ export default function ProgrammesAdmin() {
   async function saveEdit() {
     setSaving(true);
     try {
-      const updated = await api.patch(`/api/admin/programmes/${editing.slug}`, {
-        icon: editing.icon,
-        teaser: editing.teaserDraft,
-        body: editing.bodyDraft,
-        images: editing.imagesDraft,
-      });
-      setProgrammes((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      await autosave.flush();
       setEditing(null);
     } finally {
       setSaving(false);
@@ -162,6 +206,7 @@ export default function ProgrammesAdmin() {
       });
       setProgrammes((prev) => [...prev, created]);
       setCreating(false);
+      discardCreateDraft();
     } catch (err) {
       setCreateError(err.message || 'Something went wrong creating that programme.');
     } finally {
@@ -169,14 +214,59 @@ export default function ProgrammesAdmin() {
     }
   }
 
+  // The create form has no server-side id to autosave against yet (nothing to
+  // PATCH until "Create programme" is clicked) — so this only keeps a local
+  // backup, written on every change, so a crash/power-loss before submitting
+  // doesn't lose a half-written new programme either.
+  const createDraftKey = 'sachi-draft:programme:new';
+  useEffect(() => {
+    if (!creating) return;
+    try {
+      localStorage.setItem(createDraftKey, JSON.stringify({ data: createDraft, savedAt: Date.now() }));
+    } catch {
+      /* ignore */
+    }
+  }, [createDraft, creating]);
+
+  function discardCreateDraft() {
+    try {
+      localStorage.removeItem(createDraftKey);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  useEffect(() => {
+    if (!creating) return;
+    try {
+      const raw = localStorage.getItem(createDraftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft?.data && !isBlankHtml(draft.data.body) && confirm('Restore the unfinished new programme you were drafting earlier?')) {
+        setCreateDraft(draft.data);
+      } else {
+        discardCreateDraft();
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creating]);
+
   const SelectedIcon = PROGRAMME_ICONS[createDraft.icon];
   const EditingIcon = editing ? PROGRAMME_ICONS[editing.icon] : null;
 
   return (
     <ProtectedSection section="programmes" title="Programmes">
       <div className={styles.toolbar}>
-        <p className={styles.hint}>Changes here save immediately to the database.</p>
-        <button className="a-btn a-btn-primary" onClick={openCreate}>+ Add programme</button>
+        <p className={styles.hint}>
+          {canEdit
+            ? 'Changes here save automatically as you type, and immediately on "Save changes".'
+            : 'You have view-only access to this section.'}
+        </p>
+        {canEdit && (
+          <button className="a-btn a-btn-primary" onClick={openCreate}>+ Add programme</button>
+        )}
       </div>
 
       <DataTable
@@ -189,7 +279,9 @@ export default function ProgrammesAdmin() {
             <td className={styles.teaserCell}>{p.teaser}</td>
             <td className="a-mono">{p.images.length}</td>
             <td>
-              <button className="a-btn a-btn-sm" onClick={() => openEdit(p)}>Edit</button>
+              <button className="a-btn a-btn-sm" onClick={() => openEdit(p)}>
+                {canEdit ? 'Edit' : 'View'}
+              </button>
             </td>
           </tr>
         )}
@@ -270,22 +362,28 @@ export default function ProgrammesAdmin() {
           {createError && <p className={styles.error}>{createError}</p>}
 
           <p className={styles.hint}>
-            Photos and the programme number are set automatically — photos can be added after creating the programme, from its Edit screen.
+            A local backup of this form is kept on this device as you type, in case of a crash
+            or power loss before you hit "Create programme". Photos and the programme number
+            are set automatically — photos can be added after creating the programme, from its
+            Edit screen.
           </p>
         </Modal>
       )}
 
       {editing && (
         <Modal
-          title={`Edit — ${editing.title}`}
+          title={`${canEdit ? 'Edit' : 'View'} — ${editing.title}`}
           onClose={() => setEditing(null)}
           wide
           footer={
             <>
-              <button className="a-btn" onClick={() => setEditing(null)}>Cancel</button>
-              <button className="a-btn a-btn-primary" onClick={saveEdit} disabled={saving}>
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
+              <AutosaveStatus status={canEdit ? autosave.status : null} lastSavedAt={autosave.lastSavedAt} />
+              <button className="a-btn" onClick={() => setEditing(null)}>{canEdit ? 'Cancel' : 'Close'}</button>
+              {canEdit && (
+                <button className="a-btn a-btn-primary" onClick={saveEdit} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+              )}
             </>
           }
         >
@@ -296,6 +394,7 @@ export default function ProgrammesAdmin() {
                 id="edit-icon"
                 value={editing.icon}
                 onChange={(e) => setEditing({ ...editing, icon: e.target.value })}
+                disabled={!canEdit}
               >
                 <option value="">Select an icon…</option>
                 {PROGRAMME_ICON_NAMES.map((name) => (
@@ -312,7 +411,7 @@ export default function ProgrammesAdmin() {
             <label htmlFor="teaser">Teaser (shown on the Programmes overview)</label>
             <RichTextEditor
               value={editing.teaserDraft}
-              onChange={(html) => setEditing({ ...editing, teaserDraft: html })}
+              onChange={(html) => canEdit && setEditing({ ...editing, teaserDraft: html })}
               minHeight={90}
             />
           </div>
@@ -321,7 +420,7 @@ export default function ProgrammesAdmin() {
             <label htmlFor="body">Full content (shown on the programme's detail page)</label>
             <RichTextEditor
               value={editing.bodyDraft}
-              onChange={(html) => setEditing({ ...editing, bodyDraft: html })}
+              onChange={(html) => canEdit && setEditing({ ...editing, bodyDraft: html })}
               minHeight={260}
             />
           </div>
@@ -338,42 +437,47 @@ export default function ProgrammesAdmin() {
                     type="file"
                     accept="image/*"
                     onChange={(e) => handleImageUpload(img.id, e)}
-                    disabled={uploadingImgId === img.id}
+                    disabled={!canEdit || uploadingImgId === img.id}
                   />
                   <input
                     value={img.caption}
                     onChange={(e) => updateImageCaption(img.id, e.target.value)}
+                    disabled={!canEdit}
                   />
-                  <div className={styles.imageActions}>
-                    <button
-                      className="a-btn a-btn-sm"
-                      disabled={i === 0}
-                      onClick={() => moveImage(img.id, -1)}
-                      aria-label="Move up"
-                    >
-                      &uarr;
-                    </button>
-                    <button
-                      className="a-btn a-btn-sm"
-                      disabled={i === editing.imagesDraft.length - 1}
-                      onClick={() => moveImage(img.id, 1)}
-                      aria-label="Move down"
-                    >
-                      &darr;
-                    </button>
-                    <button
-                      className={`a-btn a-btn-sm ${styles.removeBtn}`}
-                      onClick={() => removeImage(img.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
+                  {canEdit && (
+                    <div className={styles.imageActions}>
+                      <button
+                        className="a-btn a-btn-sm"
+                        disabled={i === 0}
+                        onClick={() => moveImage(img.id, -1)}
+                        aria-label="Move up"
+                      >
+                        &uarr;
+                      </button>
+                      <button
+                        className="a-btn a-btn-sm"
+                        disabled={i === editing.imagesDraft.length - 1}
+                        onClick={() => moveImage(img.id, 1)}
+                        aria-label="Move down"
+                      >
+                        &darr;
+                      </button>
+                      <button
+                        className={`a-btn a-btn-sm ${styles.removeBtn}`}
+                        onClick={() => removeImage(img.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-            <button className="a-btn a-btn-sm" onClick={addImage} style={{ marginTop: '10px' }}>
-              + Add photo
-            </button>
+            {canEdit && (
+              <button className="a-btn a-btn-sm" onClick={addImage} style={{ marginTop: '10px' }}>
+                + Add photo
+              </button>
+            )}
           </div>
         </Modal>
       )}

@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from app.core.database import get_database
-from app.deps import require_section
+from app.deps import require_edit
 from app.models.programme import ProgrammeCreate, ProgrammeOut, ProgrammeUpdate
 
 router = APIRouter(tags=["programmes"])
@@ -27,7 +27,7 @@ async def get_programme(slug: str, db: AsyncIOMotorDatabase = Depends(get_databa
     "/api/admin/programmes",
     response_model=ProgrammeOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_section("programmes"))],
+    dependencies=[Depends(require_edit("programmes"))],
 )
 async def create_programme(body: ProgrammeCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
     existing = await db.programmes.find_one({"slug": body.slug})
@@ -44,7 +44,7 @@ async def create_programme(body: ProgrammeCreate, db: AsyncIOMotorDatabase = Dep
 @router.patch(
     "/api/admin/programmes/{slug}",
     response_model=ProgrammeOut,
-    dependencies=[Depends(require_section("programmes"))],
+    dependencies=[Depends(require_edit("programmes"))],
 )
 async def update_programme(
     slug: str, body: ProgrammeUpdate, db: AsyncIOMotorDatabase = Depends(get_database)
