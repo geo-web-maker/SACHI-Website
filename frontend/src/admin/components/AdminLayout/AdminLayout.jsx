@@ -8,7 +8,7 @@ import { AdminUIContext } from '../../context/admin-ui-context-instance';
 import styles from './AdminLayout.module.css';
 
 export default function AdminLayout() {
-  const { user, role, loading, refreshMe } = useRole();
+  const { user, loading, refreshMe } = useRole();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -23,7 +23,7 @@ export default function AdminLayout() {
     return null;
   }
 
-  if (!role) {
+  if (!user) {
     return <Navigate to="/admin/login" replace />;
   }
 
