@@ -6,9 +6,22 @@
   gap: 16px;
 }
 
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .hint {
   font-size: 12.5px;
   color: var(--a-text-dim);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--a-accent);
+  margin-top: 4px;
 }
 
 .titleCell {
@@ -19,7 +32,27 @@
 .teaserCell {
   color: var(--a-text-dim);
   max-width: 340px;
+
+  /* Clamp to two lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+
+.iconPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconPreview {
+  display: flex;
+  align-items: center;
+  color: var(--a-text-dim);
+}
+
+/* ── Images ───────────────────────────────────────────────────────────── */
 
 .imageList {
   display: flex;
@@ -62,4 +95,127 @@
 
 .removeBtn {
   color: var(--a-accent);
+}
+
+/* ── Import modal ─────────────────────────────────────────────────────── */
+
+.importTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.importTable th {
+  text-align: left;
+  padding: 6px 10px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--a-border);
+  color: var(--a-text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.importTable td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--a-border-subtle, #f0f0f0);
+}
+
+.importTable tr:last-child td {
+  border-bottom: none;
+}
+
+.badgeNew {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeUpdate {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.importErrors {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+
+.importErrorHeading {
+  font-weight: 600;
+  font-size: 13px;
+  color: #be123c;
+  margin-bottom: 6px;
+}
+
+.importErrors ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: #be123c;
+}
+
+.importErrors li + li {
+  margin-top: 3px;
+}
+
+.importRunning {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--a-text-dim);
+  font-size: 14px;
+}
+
+.importSummary {
+  padding: 8px 0;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.importSummary p {
+  margin: 0;
+}
+
+/* ── ZIP upload progress ─────────────────────────────────────────────── */
+
+.uploadingWrap {
+  padding: 24px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploadingBar {
+  height: 6px;
+  background: var(--a-border, #e5e7eb);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.uploadingFill {
+  height: 100%;
+  background: var(--a-primary, #0e3b43);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.uploadingLabel {
+  font-size: 13px;
+  color: var(--a-text-dim);
+  text-align: center;
 }
