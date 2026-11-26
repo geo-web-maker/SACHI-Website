@@ -22,7 +22,18 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+async function requestBlob(path) {
+  const res = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+  if (!res.ok) {
+    let detail = `Request failed (${res.status})`;
+    try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
+    throw new Error(detail);
+  }
+  return res.blob();
+}
+
 export const api = {
+  blob: (path) => requestBlob(path),
   get: (path) => request(path),
   post: (path, data) => request(path, { method: 'POST', body: JSON.stringify(data) }),
   patch: (path, data) => request(path, { method: 'PATCH', body: JSON.stringify(data) }),

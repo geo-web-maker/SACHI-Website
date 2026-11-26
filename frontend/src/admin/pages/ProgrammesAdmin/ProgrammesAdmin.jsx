@@ -9,9 +9,24 @@ import AutosaveStatus from '../../components/AutosaveStatus/AutosaveStatus';
 import { useAutosave } from '../../hooks/useAutosave';
 import { useRole } from '../../hooks/useRole';
 import { api } from '../../../lib/api';
-import { toCsv, parseCsv, downloadFile } from '../../../lib/csv';
+import { toCsv, parseCsv, downloadFile, readCsvText } from '../../../lib/csv';
+import { sha256Hex, downloadBlob, lookupKnownImages, isAbsoluteUrl, findZipEntry } from '../../../lib/media';
 import { PROGRAMME_ICONS, PROGRAMME_ICON_NAMES } from '../../../data/programmeIcons';
 import styles from './ProgrammesAdmin.module.css';
+
+/** Applies captions from a captions.csv (slug, image_id, caption) onto parsed programme rows. Returns how many changed. */
+function applyCaptionOverrides(rows, csvRows) {
+  const header = (csvRows[0] || []).map((h) => h.trim().toLowerCase());
+  const [si, ii, ci] = ['slug', 'image_id', 'caption'].map((h) => header.indexOf(h));
+  if (si === -1 || ii === -1 || ci === -1) return 0;
+  const wanted = new Map(csvRows.slice(1).map((r) => [`${(r[si] || '').trim()}\u0000${(r[ii] || '').trim()}`, r[ci] ?? '']));
+  let changed = 0;
+  rows.forEach((p) => (p.images ?? []).forEach((img) => {
+    const key = `${p.slug}\u0000${img.id}`;
+    if (wanted.has(key) && wanted.get(key) !== img.caption) { img.caption = wanted.get(key); changed += 1; }
+  }));
+  return changed;
+}
 
 function isBlankHtml(html) {
   return !html || html.trim() === '' || html.trim() === '<p></p>';
@@ -48,11 +63,6 @@ function validateImportRow(p, i) {
   return errs.length ? `Row ${i + 1} (${p.title || p.slug || '?'}): ${errs.join(', ')}` : null;
 }
 
-/** Returns true for absolute URLs — these are already on Cloudinary (or elsewhere) and need no upload. */
-function isAbsoluteUrl(str) {
-  return typeof str === 'string' && /^https?:\/\//i.test(str);
-}
-
 export default function ProgrammesAdmin() {
   const { hasAccess } = useRole();
   const canEdit = hasAccess('programmes', 'edit');
@@ -77,6 +87,8 @@ export default function ProgrammesAdmin() {
   const [importErrs, setImportErrs]       = useState([]);
   const [importResult, setImportResult]   = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null); // { done, total, label }
+  const [removeUnlisted, setRemoveUnlisted] = useState(false);
+  const [importNote, setImportNote] = useState('');
 
   useEffect(() => { api.get('/api/programmes').then(setProgrammes); }, []);
 
@@ -138,8 +150,8 @@ export default function ProgrammesAdmin() {
     const file = e.target.files?.[0]; if (!file) return;
     setUploadingImgId(id);
     try {
-      const image_url = await uploadToCloudinary(file);
-      setEditing((prev) => ({ ...prev, imagesDraft: prev.imagesDraft.map((img) => img.id === id ? { ...img, image_url } : img) }));
+      const [image_url, sha256] = await Promise.all([uploadToCloudinary(file), sha256Hex(file)]);
+      setEditing((prev) => ({ ...prev, imagesDraft: prev.imagesDraft.map((img) => img.id === id ? { ...img, image_url, sha256 } : img) }));
     } finally { setUploadingImgId(null); e.target.value = ''; }
   }
   async function saveEdit() {
@@ -190,16 +202,17 @@ export default function ProgrammesAdmin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creating]);
 
-  // ── Export ──────────────────────────────────────────────────────────────
-  function handleExport() {
-    api.get('/api/programmes').then((data) => {
-      const exportData = data.map(({ id: _id, num: _num, ...rest }) => rest);
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url; a.download = `sachi-programmes-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click(); URL.revokeObjectURL(url);
-    });
+  // ── Export (ZIP: programmes.json + captions.csv + the real image files) ──
+  const [exporting, setExporting] = useState(false);
+  async function handleExport() {
+    setExporting(true);
+    try {
+      downloadBlob(`sachi-programmes-${new Date().toISOString().slice(0, 10)}.zip`, await api.blob('/api/admin/programmes/export.zip'));
+    } catch (err) {
+      alert(`Export failed: ${err.message}`);
+    } finally {
+      setExporting(false);
+    }
   }
 
   // ── Captions only (CSV) ─────────────────────────────────────────────────
@@ -218,7 +231,7 @@ export default function ProgrammesAdmin() {
     if (!file) return;
     setCaptionMsg('');
     try {
-      const rows = parseCsv(await file.text());
+      const rows = parseCsv(await readCsvText(file));
       const header = (rows[0] || []).map((h) => h.trim().toLowerCase());
       const cols = ['slug', 'image_id', 'caption'].map((c) => header.indexOf(c));
       if (cols.includes(-1)) {
@@ -267,69 +280,75 @@ export default function ProgrammesAdmin() {
 
   /**
    * ZIP import flow:
-   *   1. Extract programmes.json
-   *   2. Walk every programme's images array
-   *      - image_url is an absolute https:// URL  → keep as-is (already on Cloudinary)
-   *      - image_url is a relative path like "images/photo.jpg"  → extract from ZIP and upload
-   *      - image_url is absent/empty  → leave empty (no photo yet)
-   *   3. After all uploads, hand off to the standard preview modal
+   *   1. Read programmes.json (the same file Export produces)
+   *   2. Hash every image file in the ZIP (SHA-256 of the bytes)
+   *   3. Ask the server which hashes it already has
+   *        known   → reuse the existing hosted image (no upload); only its caption/info updates
+   *        unknown → upload to Cloudinary
+   *      Absolute https:// URLs are kept as-is.
+   *   4. Hand off to the preview modal
    */
   async function handleZipImport(file) {
     setImportState(IMPORT_UPLOADING);
     setUploadProgress(null);
-
     try {
       const zip = await JSZip.loadAsync(file);
-
-      // Find programmes.json (tolerates being inside a subfolder)
       const jsonEntry = Object.values(zip.files).find(
         (f) => !f.dir && f.name.replace(/^[^/]+\//, '') === 'programmes.json'
       );
       if (!jsonEntry) throw new Error('No programmes.json found inside the ZIP.');
 
-      const jsonText = await jsonEntry.async('string');
-      const parsed   = JSON.parse(jsonText);
-      const rows     = Array.isArray(parsed) ? parsed : (parsed.programmes ?? []);
+      const parsed = JSON.parse(await jsonEntry.async('string'));
+      const rows = Array.isArray(parsed) ? parsed : (parsed.programmes ?? []);
       if (!rows.length) throw new Error('programmes.json contains no programmes.');
 
-      // Count images that need uploading
-      const toUpload = rows.flatMap((p) =>
-        (p.images ?? []).filter((img) => img.image_url && !isAbsoluteUrl(img.image_url))
+      // Optional captions.csv in the same ZIP: its captions win over programmes.json (slug + image_id).
+      const csvEntry = Object.values(zip.files).find(
+        (f) => !f.dir && /\.csv$/i.test(f.name) && !f.name.startsWith('__MACOSX/') && !f.name.split('/').pop().startsWith('.')
       );
-      let done = 0;
+      const overridden = csvEntry ? applyCaptionOverrides(rows, parseCsv(await csvEntry.async('string'))) : 0;
+      setImportNote(csvEntry ? `captions.csv found: ${overridden} caption(s) differ from programmes.json and will be used.` : '');
 
-      // Deep-clone rows so we can mutate image_url in place
       const resolved = JSON.parse(JSON.stringify(rows));
 
+      // 1. hash every local image file
+      const local = [];
       for (const prog of resolved) {
         for (const img of prog.images ?? []) {
           if (!img.image_url || isAbsoluteUrl(img.image_url)) continue;
-
-          // Look up the file in the ZIP (path may or may not have a leading subfolder)
-          const relativePath = img.image_url; // e.g. "images/photo.jpg"
-          const entry = zip.file(relativePath)
-            ?? Object.values(zip.files).find((f) => f.name.endsWith('/' + relativePath) || f.name === relativePath);
-
+          const entry = findZipEntry(zip, img.image_url);
           if (!entry) {
-            console.warn(`ZIP import: file not found for ${relativePath}, skipping.`);
+            console.warn(`ZIP import: file not found for ${img.image_url}, skipping.`);
             img.image_url = null;
             continue;
           }
-
-          done += 1;
-          setUploadProgress({ done, total: toUpload.length, label: img.caption || relativePath });
-
-          const blob     = await entry.async('blob');
-          const fileName = relativePath.split('/').pop();
-          const fileObj  = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
-          img.image_url  = await uploadToCloudinary(fileObj);
+          const blob = await entry.async('blob');
+          img.sha256 = await sha256Hex(blob);
+          local.push({ img, blob, name: img.image_url.split('/').pop() });
         }
+      }
+
+      // 2. which of them does the system already have?
+      setUploadProgress({ done: 0, total: 0, label: 'Checking which photos are already in the system…' });
+      const known = await lookupKnownImages(local.map((l) => l.img.sha256));
+
+      // 3. reuse known images, upload only the new ones (each distinct picture once)
+      const unknown = local.filter((l) => !known[l.img.sha256]);
+      const uploaded = {};
+      const distinct = new Set(unknown.map((l) => l.img.sha256)).size;
+      let done = 0;
+      for (const l of local) {
+        if (known[l.img.sha256]) { l.img.image_url = known[l.img.sha256]; l.img._known = true; continue; }
+        if (!uploaded[l.img.sha256]) {
+          setUploadProgress({ done: ++done, total: distinct, label: l.img.caption || l.name });
+          uploaded[l.img.sha256] = await uploadToCloudinary(new File([l.blob], l.name, { type: l.blob.type || 'image/jpeg' }));
+        }
+        l.img.image_url = uploaded[l.img.sha256];
       }
 
       const errs = resolved.map(validateImportRow).filter(Boolean);
       setImportRows(resolved); setImportErrs(errs); setImportResult(null);
       setImportState(IMPORT_PREVIEW);
-
     } catch (err) {
       alert(`ZIP import failed: ${err.message}`);
       setImportState(IMPORT_IDLE);
@@ -341,7 +360,11 @@ export default function ProgrammesAdmin() {
   async function runImport() {
     setImportState(IMPORT_RUNNING);
     try {
-      const result = await api.post('/api/admin/programmes/import', { programmes: importRows });
+      const programmes = importRows.map((p) => ({
+        ...p,
+        images: p.images?.map(({ _known, ...img }) => img),
+      }));
+      const result = await api.post('/api/admin/programmes/import', { programmes, remove_unlisted_images: removeUnlisted });
       setImportResult(result); setImportState(IMPORT_DONE);
       const fresh = await api.get('/api/programmes'); setProgrammes(fresh);
     } catch (err) {
@@ -350,7 +373,7 @@ export default function ProgrammesAdmin() {
   }
 
   function closeImport() {
-    setImportState(IMPORT_IDLE); setImportRows([]); setImportErrs([]); setImportResult(null); setUploadProgress(null);
+    setImportNote(''); setImportState(IMPORT_IDLE); setImportRows([]); setImportErrs([]); setImportResult(null); setUploadProgress(null);
   }
 
   const SelectedIcon = PROGRAMME_ICONS[createDraft.icon];
@@ -367,7 +390,7 @@ export default function ProgrammesAdmin() {
         onChange={handleImportFile}
       />
 
-      <input ref={captionFileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={importCaptions} />
+      <input ref={captionFileRef} type="file" accept=".csv,.zip,text/csv,application/zip" style={{ display: 'none' }} onChange={importCaptions} />
 
       <div className={styles.toolbar}>
         <p className={styles.hint}>
@@ -376,12 +399,12 @@ export default function ProgrammesAdmin() {
             : 'You have view-only access to this section.'}
         </p>
         <div className={styles.toolbarActions}>
-          <button className="a-btn" onClick={handleExport} title="Download all programmes as a JSON file">↓ Export</button>
+          <button className="a-btn" onClick={handleExport} disabled={exporting} title="Download programmes, captions and the actual image files as a ZIP">{exporting ? 'Exporting…' : '↓ Export'}</button>
           <button className="a-btn" onClick={exportCaptions} title="Download all photo captions as a CSV file">↓ Captions</button>
           {canEdit && (
             <>
-              <button className="a-btn" onClick={() => captionFileRef.current?.click()} title="Update photo captions from a CSV file">↑ Captions</button>
-              <button className="a-btn" onClick={openImportPicker} title="Import programmes from a JSON or ZIP file">↑ Import</button>
+              <button className="a-btn" onClick={() => captionFileRef.current?.click()} title="Update photo captions from a CSV (or a ZIP containing one)">↑ Captions</button>
+              <button className="a-btn" onClick={openImportPicker} title="Import a ZIP made by Export (or a JSON file). Photos already in the system are recognised and only updated.">↑ Import</button>
               <button className="a-btn a-btn-primary" onClick={openCreate}>+ Add programme</button>
             </>
           )}
@@ -516,10 +539,16 @@ export default function ProgrammesAdmin() {
           {/* Preview table */}
           {importState === IMPORT_PREVIEW && importErrs.length === 0 && (
             <>
+              {importNote && <p className={styles.hint}>{importNote}</p>}
               <p className={styles.hint}>
                 Existing programmes (matched by slug) will be updated. New slugs will be created.
-                Images already uploaded to Cloudinary are ready — no re-uploading needed.
+                Photos are recognised by their picture, not their file name: a photo already in the system
+                keeps its image and only its caption is updated; unrecognised photos are added.
               </p>
+              <label className={styles.hint} style={{ display: 'block', margin: '8px 0' }}>
+                <input type="checkbox" checked={removeUnlisted} onChange={(e) => setRemoveUnlisted(e.target.checked)} />{' '}
+                Also remove photos that are in the system but not in this file
+              </label>
               <table className={styles.importTable}>
                 <thead><tr><th>Slug</th><th>Title</th><th>Photos</th><th>Status</th></tr></thead>
                 <tbody>
@@ -529,7 +558,7 @@ export default function ProgrammesAdmin() {
                       <tr key={p.slug}>
                         <td className="a-mono">{p.slug}</td>
                         <td>{p.title}</td>
-                        <td className="a-mono">{(p.images ?? []).length}</td>
+                        <td className="a-mono">{p.images == null ? 'unchanged' : `${p.images.length} (${p.images.filter((i) => i._known || (existing?.images ?? []).some((x) => x.image_url === i.image_url)).length} recognised)`}</td>
                         <td><span className={existing ? styles.badgeUpdate : styles.badgeNew}>{existing ? 'update' : 'new'}</span></td>
                       </tr>
                     );
@@ -545,6 +574,7 @@ export default function ProgrammesAdmin() {
             <div className={styles.importSummary}>
               <p>✓ <strong>{importResult.created}</strong> created</p>
               <p>✓ <strong>{importResult.updated}</strong> updated</p>
+              <p>✓ Photos: <strong>{importResult.photos_matched}</strong> recognised (captions updated), <strong>{importResult.photos_added}</strong> added, <strong>{importResult.photos_removed}</strong> removed</p>
               {importResult.errors?.length > 0 && (
                 <div className={styles.importErrors}>
                   <p className={styles.importErrorHeading}>Some rows had errors:</p>

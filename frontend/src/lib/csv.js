@@ -47,3 +47,33 @@ export function downloadFile(filename, content, type = 'text/csv;charset=utf-8')
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Reads a .csv file, or the first .csv inside a .zip. Returns { text, zip }
+ * where zip is the loaded archive (so callers can pull images out of it) or
+ * null for a plain CSV.
+ */
+export async function readCsvBundle(file) {
+  if (!/\.zip$/i.test(file.name)) return { text: await file.text(), zip: null };
+  const { default: JSZip } = await import('jszip');
+  const zip = await JSZip.loadAsync(file);
+  const entry = Object.values(zip.files).find(
+    (f) => !f.dir && /\.csv$/i.test(f.name) && !f.name.startsWith('__MACOSX/') && !f.name.split('/').pop().startsWith('.')
+  );
+  if (!entry) throw new Error('No .csv file found inside the ZIP.');
+  return { text: await entry.async('string'), zip };
+}
+
+export async function readCsvText(file) {
+  return (await readCsvBundle(file)).text;
+}
+
+/** Finds a file in a JSZip archive by relative path (tolerates a wrapping folder). */
+export function findZipFile(zip, path) {
+  const clean = path.replace(/^\.?\//, '');
+  return (
+    zip.file(clean) ??
+    Object.values(zip.files).find((f) => !f.dir && (f.name === clean || f.name.endsWith('/' + clean))) ??
+    null
+  );
+}

@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     cloudinary_cloud_name: str = ""
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
+    # Hosts the server may download images from (export / hash backfill). Comma-separated suffixes.
+    image_host_suffixes: str = "cloudinary.com"
 
     egosms_username: str = ""
     egosms_password: str = ""
@@ -26,6 +28,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def image_host_suffix_list(self) -> list[str]:
+        return [h.strip().lower() for h in self.image_host_suffixes.split(",") if h.strip()]
 
 
 settings = Settings()

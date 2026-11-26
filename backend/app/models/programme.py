@@ -7,6 +7,7 @@ class ProgrammeImage(BaseModel):
     id: str
     caption: str
     image_url: str | None = None   # added
+    sha256: str | None = None      # SHA-256 of the original image bytes; lets import recognise the same picture
 
 
 class ProgrammeOut(BaseModel):

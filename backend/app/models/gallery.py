@@ -9,16 +9,19 @@ class GalleryPhotoOut(BaseModel):
     id: PyObjectId = Field(validation_alias="_id")
     caption: str
     image_url: str | None = None  # None until real upload/storage (R2, etc.) is wired up
+    sha256: str | None = None
 
 
 class GalleryPhotoCreate(BaseModel):
     caption: str = "Untitled photo"
     image_url: str | None = None
+    sha256: str | None = None
 
 
 class GalleryPhotoUpdate(BaseModel):
     caption: str | None = None
     image_url: str | None = None   # added
+    sha256: str | None = None
 
 
 class CaptionBulkItem(BaseModel):
@@ -35,3 +38,19 @@ class CaptionBulkResult(BaseModel):
     unchanged: int
     not_found: list[str]
     invalid_ids: list[str]
+
+
+class GalleryImportItem(BaseModel):
+    caption: str = ""
+    image_url: str | None = None
+    sha256: str | None = None
+
+
+class GalleryImportPayload(BaseModel):
+    items: list[GalleryImportItem] = Field(max_length=1000)
+
+
+class GalleryImportResult(BaseModel):
+    created: int
+    updated: int
+    unchanged: int

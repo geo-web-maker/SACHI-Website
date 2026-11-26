@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import close_client, ensure_indexes
-from app.routers import admin_users, auth, contact, dashboard, donations, gallery, jobs, programmes, uploads
+from app.routers import admin_users, auth, contact, dashboard, donations, gallery, jobs, media, programmes, uploads
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +32,7 @@ app.include_router(uploads.public_router)
 app.include_router(programmes.router)
 app.include_router(jobs.router)
 app.include_router(gallery.router)
+app.include_router(media.router)
 app.include_router(contact.router)
 app.include_router(donations.router)
 app.include_router(admin_users.router)

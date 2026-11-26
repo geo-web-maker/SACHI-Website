@@ -1,0 +1,25 @@
+[
+  {
+    "slug": "participatory-action-research",
+    "icon": "Search",
+    "title": "Participatory Action Research",
+    "teaser": "<p>We work with community members and stakeholders to identify local health problems, design investigations and put practical solutions into action.</p>",
+    "body": "<h2>How we work</h2><p>Every project starts with the community. Residents help <strong>define the question</strong>, collect the data and decide what to do with the findings.</p><ul><li>Joint problem identification</li><li>Community-led data collection</li><li>Shared review of results</li></ul><h3>Impact</h3><p>Findings go back to the people who produced them, within weeks, not months.</p>",
+    "images": [
+      { "id": "participatory-action-research-1", "caption": "Community data review session", "image_url": "images/community-review-session.jpg" },
+      { "id": "participatory-action-research-2", "caption": "Stakeholder workshop at the parish hall", "image_url": "images/stakeholder-workshop.jpg" },
+      { "id": "participatory-action-research-3", "caption": "Field consultation (photo to be added)" }
+    ]
+  },
+  {
+    "slug": "community-nutrition-clinics",
+    "icon": "Wheat",
+    "title": "Community Nutrition Clinics",
+    "teaser": "<p>Monthly clinics that screen children for malnutrition and teach families low-cost, locally available meal planning.</p>",
+    "body": "<p>Run by trained village health teams, each clinic offers <em>screening, counselling and referral</em> in one visit.</p><ol><li>Growth monitoring</li><li>Cooking demonstrations</li><li>Referral to health centres where needed</li></ol>",
+    "images": [
+      { "id": "community-nutrition-clinics-1", "caption": "Families queue for growth monitoring", "image_url": "images/nutrition-clinic-queue.jpg" },
+      { "id": "community-nutrition-clinics-2", "caption": "Already hosted on Cloudinary (absolute URL is kept as-is)", "image_url": "https://res.cloudinary.com/your-cloud/image/upload/v1/sachi/example.jpg" }
+    ]
+  }
+]
