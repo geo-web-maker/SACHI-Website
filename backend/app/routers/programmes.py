@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
 from app.core.database import get_database
@@ -156,3 +156,62 @@ async def import_programmes(
             errors.append(f"{row.slug}: {exc}")
 
     return ProgrammeImportResult(created=created, updated=updated, errors=errors)
+
+
+# ── Bulk caption update ────────────────────────────────────────────────────
+
+
+class CaptionRow(BaseModel):
+    slug: str
+    image_id: str
+    caption: str
+
+
+class CaptionBulkPayload(BaseModel):
+    rows: list[CaptionRow] = Field(max_length=5000)
+
+
+class CaptionBulkResult(BaseModel):
+    updated: int
+    unchanged: int
+    not_found: list[str]
+
+
+@router.post(
+    "/api/admin/programmes/captions/bulk",
+    response_model=CaptionBulkResult,
+    dependencies=[Depends(require_edit("programmes"))],
+)
+async def bulk_update_captions(
+    body: CaptionBulkPayload, db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Update only the caption of existing photos, matched by (slug, image id).
+
+    Unlike /import this never touches titles, body text, image order or URLs.
+    """
+    by_slug: dict[str, dict[str, str]] = {}
+    for r in body.rows:
+        by_slug.setdefault(r.slug, {})[r.image_id] = r.caption
+
+    updated = unchanged = 0
+    not_found: list[str] = []
+    for slug, wanted in by_slug.items():
+        doc = await db.programmes.find_one({"slug": slug}, {"images": 1})
+        if doc is None:
+            not_found.extend(f"{slug}/{iid}" for iid in wanted)
+            continue
+        images = doc.get("images", [])
+        known = {img["id"] for img in images}
+        not_found.extend(f"{slug}/{iid}" for iid in wanted if iid not in known)
+        changed = False
+        for img in images:
+            if img["id"] in wanted:
+                if img.get("caption") == wanted[img["id"]]:
+                    unchanged += 1
+                else:
+                    img["caption"] = wanted[img["id"]]
+                    updated += 1
+                    changed = True
+        if changed:
+            await db.programmes.update_one({"slug": slug}, {"$set": {"images": images}})
+    return CaptionBulkResult(updated=updated, unchanged=unchanged, not_found=not_found)

@@ -19,3 +19,19 @@ class GalleryPhotoCreate(BaseModel):
 class GalleryPhotoUpdate(BaseModel):
     caption: str | None = None
     image_url: str | None = None   # added
+
+
+class CaptionBulkItem(BaseModel):
+    id: str
+    caption: str
+
+
+class CaptionBulkUpdate(BaseModel):
+    items: list[CaptionBulkItem] = Field(max_length=2000)
+
+
+class CaptionBulkResult(BaseModel):
+    updated: int
+    unchanged: int
+    not_found: list[str]
+    invalid_ids: list[str]

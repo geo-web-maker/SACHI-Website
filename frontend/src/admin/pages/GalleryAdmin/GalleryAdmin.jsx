@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import { api } from '../../../lib/api';
 import { uploadToCloudinary } from '../../../lib/cloudinary';
+import { toCsv, parseCsv, downloadFile } from '../../../lib/csv';
 import { useRole } from '../../hooks/useRole';
 import styles from './GalleryAdmin.module.css';
 
@@ -17,6 +18,8 @@ export default function GalleryAdmin() {
   const [photos, setPhotos] = useState([]);
   const [uploadingId, setUploadingId] = useState(null);
   const captionTimers = useRef({});
+  const importRef = useRef(null);
+  const [importMsg, setImportMsg] = useState('');
 
   useEffect(() => {
     api.get('/api/gallery').then(setPhotos);
@@ -59,6 +62,45 @@ export default function GalleryAdmin() {
     return () => window.removeEventListener('pagehide', flushAll);
   }, [photos]);
 
+  function exportCaptions() {
+    const rows = [['id', 'caption', 'image_url'], ...photos.map((p) => [p.id, p.caption, p.image_url || ''])];
+    downloadFile(`gallery-captions-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  }
+
+  async function importCaptions(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImportMsg('');
+    try {
+      const rows = parseCsv(await file.text());
+      const header = (rows[0] || []).map((h) => h.trim().toLowerCase());
+      const idCol = header.indexOf('id');
+      const capCol = header.indexOf('caption');
+      if (idCol === -1 || capCol === -1) {
+        setImportMsg('Import failed: the CSV needs "id" and "caption" columns (use Export to get a template).');
+        return;
+      }
+      const items = rows.slice(1)
+        .map((r) => ({ id: (r[idCol] || '').trim(), caption: r[capCol] ?? '' }))
+        .filter((i) => i.id);
+
+      // Drop pending debounced saves so they can't overwrite imported values.
+      Object.values(captionTimers.current).forEach(clearTimeout);
+      captionTimers.current = {};
+
+      const res = await api.post('/api/admin/gallery/captions/bulk', { items });
+      setPhotos(await api.get('/api/gallery'));
+      const skipped = res.not_found.length + res.invalid_ids.length;
+      setImportMsg(
+        `Imported: ${res.updated} updated, ${res.unchanged} unchanged` +
+        (skipped ? `, ${skipped} skipped (unknown id)` : '') + '.'
+      );
+    } catch (err) {
+      setImportMsg(`Import failed: ${err.message}`);
+    }
+  }
+
   async function handleFileChange(id, e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -79,10 +121,16 @@ export default function GalleryAdmin() {
         <p className={styles.hint}>
           {canEdit ? 'Upload a photo, then add a caption.' : 'You have view-only access to this section.'}
         </p>
+        <button className="a-btn" onClick={exportCaptions} disabled={!photos.length}>Export captions</button>
         {canEdit && (
-          <button className="a-btn a-btn-primary" onClick={addPhoto}>+ Add photo</button>
+          <>
+            <button className="a-btn" onClick={() => importRef.current?.click()}>Import captions</button>
+            <input ref={importRef} type="file" accept=".csv,text/csv" hidden onChange={importCaptions} />
+            <button className="a-btn a-btn-primary" onClick={addPhoto}>+ Add photo</button>
+          </>
         )}
       </div>
+      {importMsg && <p className={styles.hint} role="status">{importMsg}</p>}
 
       <div className={styles.grid}>
         {photos.map((p) => (

@@ -9,6 +9,7 @@ import AutosaveStatus from '../../components/AutosaveStatus/AutosaveStatus';
 import { useAutosave } from '../../hooks/useAutosave';
 import { useRole } from '../../hooks/useRole';
 import { api } from '../../../lib/api';
+import { toCsv, parseCsv, downloadFile } from '../../../lib/csv';
 import { PROGRAMME_ICONS, PROGRAMME_ICON_NAMES } from '../../../data/programmeIcons';
 import styles from './ProgrammesAdmin.module.css';
 
@@ -69,6 +70,8 @@ export default function ProgrammesAdmin() {
 
   // ── Import state ──────────────────────────────────────────────────────
   const importFileRef = useRef(null);
+  const captionFileRef = useRef(null);
+  const [captionMsg, setCaptionMsg] = useState('');
   const [importState, setImportState]     = useState(IMPORT_IDLE);
   const [importRows, setImportRows]       = useState([]);
   const [importErrs, setImportErrs]       = useState([]);
@@ -199,6 +202,43 @@ export default function ProgrammesAdmin() {
     });
   }
 
+  // ── Captions only (CSV) ─────────────────────────────────────────────────
+  // One row per photo: slug, image_id, caption (+ read-only context columns).
+  // Import matches on slug + image_id and changes nothing but the caption.
+  async function exportCaptions() {
+    const data = await api.get('/api/programmes');
+    const rows = [['slug', 'image_id', 'caption', 'programme_title', 'image_url']];
+    data.forEach((p) => p.images.forEach((img) => rows.push([p.slug, img.id, img.caption, p.title, img.image_url || ''])));
+    downloadFile(`sachi-programme-captions-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  }
+
+  async function importCaptions(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setCaptionMsg('');
+    try {
+      const rows = parseCsv(await file.text());
+      const header = (rows[0] || []).map((h) => h.trim().toLowerCase());
+      const cols = ['slug', 'image_id', 'caption'].map((c) => header.indexOf(c));
+      if (cols.includes(-1)) {
+        setCaptionMsg('Import failed: the CSV needs "slug", "image_id" and "caption" columns (use Export captions to get a template).');
+        return;
+      }
+      const items = rows.slice(1)
+        .map((r) => ({ slug: (r[cols[0]] || '').trim(), image_id: (r[cols[1]] || '').trim(), caption: r[cols[2]] ?? '' }))
+        .filter((r) => r.slug && r.image_id);
+      const res = await api.post('/api/admin/programmes/captions/bulk', { rows: items });
+      setProgrammes(await api.get('/api/programmes'));
+      setCaptionMsg(
+        `Captions imported: ${res.updated} updated, ${res.unchanged} unchanged` +
+        (res.not_found.length ? `, ${res.not_found.length} skipped (not found: ${res.not_found.slice(0, 3).join(', ')}${res.not_found.length > 3 ? '…' : ''})` : '') + '.'
+      );
+    } catch (err) {
+      setCaptionMsg(`Import failed: ${err.message}`);
+    }
+  }
+
   // ── Import ──────────────────────────────────────────────────────────────
   function openImportPicker() { importFileRef.current?.click(); }
 
@@ -327,6 +367,8 @@ export default function ProgrammesAdmin() {
         onChange={handleImportFile}
       />
 
+      <input ref={captionFileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={importCaptions} />
+
       <div className={styles.toolbar}>
         <p className={styles.hint}>
           {canEdit
@@ -335,14 +377,18 @@ export default function ProgrammesAdmin() {
         </p>
         <div className={styles.toolbarActions}>
           <button className="a-btn" onClick={handleExport} title="Download all programmes as a JSON file">↓ Export</button>
+          <button className="a-btn" onClick={exportCaptions} title="Download all photo captions as a CSV file">↓ Captions</button>
           {canEdit && (
             <>
+              <button className="a-btn" onClick={() => captionFileRef.current?.click()} title="Update photo captions from a CSV file">↑ Captions</button>
               <button className="a-btn" onClick={openImportPicker} title="Import programmes from a JSON or ZIP file">↑ Import</button>
               <button className="a-btn a-btn-primary" onClick={openCreate}>+ Add programme</button>
             </>
           )}
         </div>
       </div>
+
+      {captionMsg && <p className={styles.hint} role="status">{captionMsg}</p>}
 
       <DataTable
         columns={['#', 'Title', 'Teaser', 'Photos', '']}
