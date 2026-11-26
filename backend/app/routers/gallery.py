@@ -8,8 +8,9 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument, UpdateOne
 
 from app.core.database import get_database
-from app.core.images import fetch_many, image_extension, safe_name, sha256_hex, zip_response
+from app.core.images import ZipBuilder, hash_bytes, image_extension, iter_fetched, safe_name, single_export
 from app.deps import require_edit, require_view
+from app.models.common import user_has_access
 from app.models.gallery import (
     CaptionBulkResult,
     CaptionBulkUpdate,
@@ -109,44 +110,63 @@ async def remove_photo(photo_id: str, db: AsyncIOMotorDatabase = Depends(get_dat
 # ── Full export / import (ZIP with real images) ────────────────────────────
 
 
-@router.get("/api/admin/gallery/export.zip", dependencies=[Depends(require_view("gallery"))])
-async def export_gallery_zip(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """gallery.json + captions.csv + the actual image files (not links)."""
-    docs = await db.gallery_photos.find().to_list(length=None)
-    fetched = await fetch_many(d["image_url"] for d in docs if d.get("image_url"))
+@router.get("/api/admin/gallery/export.zip")
+async def export_gallery_zip(
+    user: dict = Depends(require_view("gallery")),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    """gallery.json + captions.csv + the actual image files (not links).
 
-    files: list[tuple[str, bytes]] = []
-    warnings: list[str] = []
-    photos: list[dict] = []
-    rows = [["id", "caption", "image_file", "sha256"]]
+    Images are downloaded a few at a time and written straight into the ZIP, so
+    memory use stays flat. Newly computed hashes are saved back only for users
+    who can edit the gallery.
+    """
+    async with single_export():
+        docs = await db.gallery_photos.find().to_list(length=None)
 
-    for n, d in enumerate(docs, 1):
-        entry = {"id": str(d["_id"]), "caption": d.get("caption", "")}
-        url = d.get("image_url")
-        if url:
-            res = fetched.get(url)
-            if res is not None and res.data is not None:
-                digest = sha256_hex(res.data)
-                path = f"images/{n:03d}-{safe_name(str(d['_id']))}{image_extension(url, res.content_type)}"
-                files.append((path, res.data))
-                entry.update(image_url=path, sha256=digest)
-                if d.get("sha256") != digest:
-                    await db.gallery_photos.update_one({"_id": d["_id"]}, {"$set": {"sha256": digest}})
-            else:
-                entry["image_url"] = url
-                if d.get("sha256"):
-                    entry["sha256"] = d["sha256"]
-                warnings.append(f"{entry['id']}: not exported as a file ({res.error if res else 'unknown'}); link kept")
-        photos.append(entry)
-        rows.append([entry["id"], entry["caption"], entry.get("image_url", ""), entry.get("sha256", "")])
+        photos: list[dict] = []
+        refs: dict[str, list[tuple]] = {}  # url -> [(position, doc, export entry)]
+        for n, d in enumerate(docs, 1):
+            entry = {"id": str(d["_id"]), "caption": d.get("caption", "")}
+            photos.append(entry)
+            if d.get("image_url"):
+                refs.setdefault(d["image_url"], []).append((n, d, entry))
 
-    buf = io.StringIO()
-    csv.writer(buf, lineterminator="\r\n").writerows(rows)
-    files.insert(0, ("gallery.json", json.dumps(photos, indent=2, ensure_ascii=False).encode("utf-8")))
-    files.insert(1, ("captions.csv", ("\ufeff" + buf.getvalue()).encode("utf-8")))
-    if warnings:
-        files.insert(2, ("export-warnings.txt", "\n".join(warnings).encode("utf-8")))
-    return zip_response(files, "sachi-gallery.zip")
+        zb = ZipBuilder()
+        try:
+            warnings: list[str] = []
+            hash_updates: list[UpdateOne] = []
+            async for url, res in iter_fetched(refs):
+                digest = await hash_bytes(res.data) if res.data is not None else None
+                for n, d, entry in refs[url]:
+                    if digest is not None:
+                        path = f"images/{n:03d}-{safe_name(str(d['_id']))}{image_extension(url, res.content_type)}"
+                        await zb.add(path, res.data)
+                        entry.update(image_url=path, sha256=digest)
+                        if d.get("sha256") != digest:
+                            hash_updates.append(UpdateOne({"_id": d["_id"]}, {"$set": {"sha256": digest}}))
+                    else:
+                        entry["image_url"] = url
+                        if d.get("sha256"):
+                            entry["sha256"] = d["sha256"]
+                        warnings.append(f"{entry['id']}: not exported as a file ({res.error or 'unknown'}); link kept")
+
+            if hash_updates and user_has_access(user, "gallery", "edit"):
+                await db.gallery_photos.bulk_write(hash_updates, ordered=False)
+
+            rows = [["id", "caption", "image_file", "sha256"]]
+            rows += [[e["id"], e["caption"], e.get("image_url", ""), e.get("sha256", "")] for e in photos]
+            buf = io.StringIO()
+            csv.writer(buf, lineterminator="\r\n").writerows(rows)
+
+            await zb.add("gallery.json", json.dumps(photos, indent=2, ensure_ascii=False).encode("utf-8"))
+            await zb.add("captions.csv", ("\ufeff" + buf.getvalue()).encode("utf-8"))
+            if warnings:
+                await zb.add("export-warnings.txt", "\n".join(warnings).encode("utf-8"))
+            return zb.response("sachi-gallery.zip")
+        except BaseException:
+            zb.close()
+            raise
 
 
 @router.post(
@@ -159,7 +179,8 @@ async def import_gallery(body: GalleryImportPayload, db: AsyncIOMotorDatabase = 
 
     A photo whose sha256 (else image_url) is already in the gallery is the same
     photo: only its caption is updated. Anything else is created. Photos that
-    are in the gallery but not in the file are left alone.
+    are in the gallery but not in the file are left alone. Rows with neither a
+    picture nor a hash are skipped (use the captions import to edit captions).
     """
     hashes = [i.sha256 for i in body.items if i.sha256]
     urls = [i.image_url for i in body.items if i.image_url]
@@ -180,8 +201,11 @@ async def import_gallery(body: GalleryImportPayload, db: AsyncIOMotorDatabase = 
                 return d
         return None
 
-    created = updated = unchanged = 0
+    created = updated = unchanged = skipped = 0
     for item in body.items:
+        if not item.image_url and not item.sha256:
+            skipped += 1
+            continue
         doc = None
         if item.sha256:
             doc = take(("sha", item.sha256))
@@ -204,4 +228,4 @@ async def import_gallery(body: GalleryImportPayload, db: AsyncIOMotorDatabase = 
                 {"caption": item.caption or "Untitled photo", "image_url": item.image_url, "sha256": item.sha256}
             )
             created += 1
-    return GalleryImportResult(created=created, updated=updated, unchanged=unchanged)
+    return GalleryImportResult(created=created, updated=updated, unchanged=unchanged, skipped=skipped)

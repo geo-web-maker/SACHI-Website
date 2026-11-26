@@ -22,17 +22,20 @@ async def lookup_images(
 ):
     """Which of these SHA-256 hashes are already in the system (programmes or gallery)?
 
-    Returns {known: {sha256: image_url}} so the importer can reuse the existing
-    hosted image instead of uploading the same picture again.
+    Returns {known: {sha256: image_url}, pending: n} so the importer can reuse
+    the existing hosted image instead of uploading the same picture again.
+    ``pending`` > 0 means older images are still being hashed (the backfill is
+    time-boxed and saves progress as it goes): call again until it reaches 0,
+    otherwise some pictures may not be recognised yet.
     """
     if not (user_has_access(user, "programmes", "edit") or user_has_access(user, "gallery", "edit")):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You don't have edit access to programmes or gallery")
 
     wanted = {h.lower() for h in body.hashes if SHA256_RE.match(h.lower())}
     if not wanted:
-        return {"known": {}}
+        return {"known": {}, "pending": 0}
 
-    await ensure_hashes(db)  # first call may take a while on old data; cached afterwards
+    pending = await ensure_hashes(db)  # time-boxed; hashes are saved as they are computed
 
     known: dict[str, str] = {}
     async for p in db.programmes.find({"images.sha256": {"$in": list(wanted)}}, {"images": 1}):
@@ -42,4 +45,4 @@ async def lookup_images(
     async for g in db.gallery_photos.find({"sha256": {"$in": list(wanted)}}, {"image_url": 1, "sha256": 1}):
         if g.get("image_url"):
             known.setdefault(g["sha256"], g["image_url"])
-    return {"known": known}
+    return {"known": known, "pending": pending}

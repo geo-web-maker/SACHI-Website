@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import { api } from '../../../lib/api';
 import { uploadToCloudinary } from '../../../lib/cloudinary';
-import JSZip from 'jszip';
 import { toCsv, parseCsv, downloadFile, readCsvBundle, findZipFile } from '../../../lib/csv';
 import { sha256Hex, downloadBlob, lookupKnownImages, isAbsoluteUrl, findZipEntry } from '../../../lib/media';
 import { useRole } from '../../hooks/useRole';
@@ -85,6 +84,7 @@ export default function GalleryAdmin() {
     setImportMsg('');
     try {
       setBusy('Reading ZIP…');
+      const { default: JSZip } = await import('jszip');
       const zip = await JSZip.loadAsync(file);
       const jsonEntry = Object.values(zip.files).find((f) => !f.dir && f.name.replace(/^[^/]+\//, '') === 'gallery.json');
       if (!jsonEntry) throw new Error('No gallery.json found inside the ZIP (use a ZIP made by Export).');
@@ -105,7 +105,7 @@ export default function GalleryAdmin() {
         local.push({ it, blob, name: it.image_url.split('/').pop() });
       }
       setBusy('Checking which photos are already in the gallery…');
-      const known = await lookupKnownImages(local.map((l) => l.it.sha256));
+      const known = await lookupKnownImages(local.map((l) => l.it.sha256), (n) => setBusy(`Indexing ${n} existing photo(s)…`));
       const fresh = new Set(local.filter((l) => !known[l.it.sha256]).map((l) => l.it.sha256));
       if (!confirm(
         `${items.length} photo(s) in the file.\n` +
@@ -128,7 +128,7 @@ export default function GalleryAdmin() {
       captionTimers.current = {};
       const res = await api.post('/api/admin/gallery/import', { items });
       setPhotos(await api.get('/api/gallery'));
-      setImportMsg(`Imported: ${res.created} added, ${res.updated} caption(s) updated, ${res.unchanged} unchanged.`);
+      setImportMsg(`Imported: ${res.created} added, ${res.updated} caption(s) updated, ${res.unchanged} unchanged${res.skipped ? `, ${res.skipped} skipped (no picture)` : ''}.`);
     } catch (err) {
       setImportMsg(`Import failed: ${err.message}`);
     } finally {

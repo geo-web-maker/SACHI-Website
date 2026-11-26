@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import JSZip from 'jszip';
 import { uploadToCloudinary } from '../../../lib/cloudinary';
 import ProtectedSection from '../../components/ProtectedSection/ProtectedSection';
 import DataTable from '../../components/DataTable/DataTable';
@@ -292,6 +291,7 @@ export default function ProgrammesAdmin() {
     setImportState(IMPORT_UPLOADING);
     setUploadProgress(null);
     try {
+      const { default: JSZip } = await import('jszip');
       const zip = await JSZip.loadAsync(file);
       const jsonEntry = Object.values(zip.files).find(
         (f) => !f.dir && f.name.replace(/^[^/]+\//, '') === 'programmes.json'
@@ -330,7 +330,8 @@ export default function ProgrammesAdmin() {
 
       // 2. which of them does the system already have?
       setUploadProgress({ done: 0, total: 0, label: 'Checking which photos are already in the system…' });
-      const known = await lookupKnownImages(local.map((l) => l.img.sha256));
+      const known = await lookupKnownImages(local.map((l) => l.img.sha256), (n) =>
+        setUploadProgress({ done: 0, total: 0, label: `Indexing ${n} existing photo(s)…` }));
 
       // 3. reuse known images, upload only the new ones (each distinct picture once)
       const unknown = local.filter((l) => !known[l.img.sha256]);

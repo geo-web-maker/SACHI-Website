@@ -15,11 +15,30 @@ export function downloadBlob(filename, blob) {
   URL.revokeObjectURL(url);
 }
 
-/** Ask the server which hashes are already in the system → { [sha256]: existingImageUrl }. */
-export async function lookupKnownImages(hashes) {
+const LOOKUP_CHUNK = 1000;      // server accepts at most 2000 hashes per call
+const LOOKUP_MAX_ROUNDS = 60;   // each round lets the server hash more older photos
+
+/**
+ * Ask the server which hashes are already in the system → { [sha256]: existingImageUrl }.
+ *
+ * The server indexes older photos in the background of each call and reports
+ * `pending` while some are still unhashed. We keep asking until it reaches 0,
+ * so a picture that is already hosted is never mistaken for a new one.
+ */
+export async function lookupKnownImages(hashes, onWait) {
   const unique = [...new Set(hashes)];
-  if (!unique.length) return {};
-  const { known } = await api.post('/api/admin/images/lookup', { hashes: unique });
+  const known = {};
+  for (let i = 0; i < unique.length; i += LOOKUP_CHUNK) {
+    const chunk = unique.slice(i, i + LOOKUP_CHUNK);
+    for (let round = 0; ; round++) {
+      const res = await api.post('/api/admin/images/lookup', { hashes: chunk });
+      if (!res.pending) { Object.assign(known, res.known); break; }
+      if (round + 1 >= LOOKUP_MAX_ROUNDS) {
+        throw new Error('Existing photos are still being indexed. Please run the import again in a minute.');
+      }
+      onWait?.(res.pending);
+    }
+  }
   return known;
 }
 

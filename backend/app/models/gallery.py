@@ -54,3 +54,4 @@ class GalleryImportResult(BaseModel):
     created: int
     updated: int
     unchanged: int
+    skipped: int = 0  # rows with neither a picture nor a hash
